@@ -1,5 +1,104 @@
 # 🔍 Job Hunter — Claude Skill
 
+A universal job search automation skill for Claude.  
+Works for any profession, any country, any language.
+
+---
+
+## What it does
+
+- **Daily reports** — artifact with all found vacancies and direct links
+- **Auto-applications** — submits applications where browser automation is possible
+- **Smart filtering** — by stack, geo, salary, work format
+- **Cover letters** — short (80–120 words), unique per vacancy, written in the vacancy's language
+- **Multi-platform search** — hh.ru, LinkedIn, Habr Career, Telegram channels, niche job boards
+- **Telegram channel discovery** — automatically finds active channels via tgstat.ru / telemetr.io
+- **Resume tracking** — detects changes on every run
+- **Security audit** — self-checks before working with personal data
+
+---
+
+## Requirements
+
+| | |
+|---|---|
+| **Platform** | Claude.ai |
+| **Plan** | Pro or higher (Skills are not available on Free) |
+| **Browser** | Claude in Chrome extension — for auto-applications and search |
+
+---
+
+## Installation
+
+1. Open **claude.ai → Settings → Skills**
+2. Click **Add skill**
+3. Copy the contents of [`SKILL.md`](./SKILL.md) and paste
+4. Save
+
+---
+
+## First run
+
+Type in Claude:
+
+```
+Find me a job
+```
+
+The skill will run:
+- Security check
+- Language selection
+- One-time onboarding (~2 minutes)
+- Platform and Telegram channel setup
+
+If you already have a job search profile in Claude's memory — it will offer to import it instead of asking everything from scratch.
+
+---
+
+## How to run daily search
+
+**Option 1 — manual** (works right away):
+
+```
+Run job search
+```
+
+The skill searches, filters, applies, and creates a report artifact with direct links.
+
+**Option 2 — scheduled** (via Claude Code):  
+Set up a scheduled task in Claude Code — the skill will run automatically every day without your involvement.
+
+---
+
+## What happens on each run
+
+1. Checks resume for changes
+2. Searches all platforms and Telegram channels
+3. Filters and ranks by your profile
+4. Asks for confirmation before applying
+5. Submits applications with unique cover letters
+6. Creates a report artifact with direct links
+
+---
+
+## Limitations
+
+- Auto-applications only work where browser UI is available
+- Vacancies with test tasks go to a separate list — no auto-apply
+- Telegram search requires an active session in web.telegram.org
+- The skill never stores passwords or asks for API keys
+
+---
+
+## Author
+
+[Mari](https://github.com/blackasp)
+
+---
+---
+
+# 🔍 Job Hunter — скилл для Claude
+
 Универсальный скилл для автоматизации поиска работы в Claude.  
 Работает для любой профессии, любой страны, любого языка.
 
