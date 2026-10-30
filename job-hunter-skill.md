@@ -1,17 +1,33 @@
 ---
 name: "job-hunter"
-description: "Universal job search automation: daily vacancy reports, auto-applications, resume tracking, Telegram channel discovery, and multi-platform search. Activate for any job-hunting task: setup, daily runs, resume updates, or reviewing found vacancies."
+description: "Universal job search automation: daily vacancy reports, auto-applications, resume tracking, Telegram channel discovery, multi-platform search, and open calls / grants / residencies search."
 ---
 
 # Job Hunter
 
 An automated, universal job search system. Works for any profession, any geography, any language. The user sets it up once — and gets daily reports with relevant vacancies, auto-applications where possible, and smart filtering aligned to their profile.
 
+Also supports searching for **open calls, grants, and residencies** for creative practitioners — see Phase 6.
+
+---
+
+## ⚠️ EXECUTION RULES — READ BEFORE STARTING
+
+These rules override everything else in this skill:
+
+1. **Every phase is mandatory.** No phase may be skipped by your own decision. Ever.
+2. **If a phase fails technically** (browser error, network issue, login wall, tool unavailable) — write the failure to the Technical Notes section of the report with the exact reason, then continue to the next phase automatically. Do not stop. Do not ask.
+3. **If a phase is logically blocked** (e.g. Phase 2 was never completed and platform list is missing) — do the maximum possible without user input, note what is missing in the report, and continue.
+4. **Never ask questions during an automated / scheduled run.** If the session was started by a scheduled task or the user is not present — proceed automatically at every step. Questions are only allowed during interactive onboarding (Phase 0–1) on the very first run.
+5. **The report must always be created**, even if 0 vacancies were found or multiple phases failed. A failed run with a full Technical Notes section is better than silence.
+6. **Do not invent shortcuts.** Using memory from a previous session does not replace running the phases. If a platform list exists in memory, use it — but still verify logins and run the search. If it does not exist, run Phase 2 to build it.
+
 ---
 
 ## Phase 0: Security check + language (very first run only)
 
-Check memory for `/areas/job-hunter-profile.md`. If `security_checked: true` is present — skip Phase 0 entirely.
+**MANDATORY. Cannot be skipped on first run.**
+Check memory for `/areas/job-hunter-profile.md`. If `security_checked: true` is present — Phase 0 is already complete, skip to Phase 1.
 
 ### Step 0a: Language selection
 
@@ -51,11 +67,17 @@ After passing: write `security_checked: true` to `/areas/job-hunter-profile.md`.
 
 ## Phase 1: Onboarding (first run only)
 
-**Profile source check:** Before asking anything, look for an existing profile in memory:
-- Check `/areas/job-hunter-profile.md` — if it has a complete profile (profession, keywords, resume) → skip to Phase 3.
-- Also check `/areas/job-search.md` — if it exists and contains job search criteria → offer to import: "I found an existing job search profile. Shall I use it as your base and just confirm a few details?" If user agrees, read that file, extract all available fields, pre-fill the profile, and ask only for missing fields (resume location, auto-apply limit). Save to `/areas/job-hunter-profile.md`.
+**MANDATORY on first run. Skip entirely if profile already exists in memory with all required fields.**
 
-If no existing profile found anywhere — run the full interview. Ask ALL questions in a single message, **in the user's chosen language** (translate every word — never leave Russian text if user chose another language):
+Required fields: profession, keywords, geo, remote preference, salary threshold, exclusions, resume source, auto_apply_limit.
+
+If ANY required field is missing — ask for it. Do not assume defaults for missing fields on first run.
+
+**Profile source check:** Before asking anything, look for an existing profile in memory:
+- Check `/areas/job-hunter-profile.md` — if it has all required fields → skip to Phase 2 check.
+- Also check `/areas/job-search.md` — if it exists and contains job search criteria → offer to import: "I found an existing job search profile. Shall I use it as your base and just confirm a few details?" If user agrees, read that file, extract all available fields, pre-fill the profile, and ask only for missing fields. Save to `/areas/job-hunter-profile.md`.
+
+If no existing profile found anywhere — run the full interview. Ask ALL questions in a single message, **in the user's chosen language**:
 
 ```
 [Translated to user's language]
@@ -92,33 +114,53 @@ After the user responds:
 
 ---
 
-## Phase 2: Platform onboarding (after first profile setup)
+## Phase 2: Platform discovery and onboarding
 
-Build a **personalized platform list** based on the profile. Priority logic (determined dynamically):
+**MANDATORY. Must run on first use and whenever `platforms_ready: true` is NOT set in profile.**
+**Cannot be replaced by a hardcoded list. Must be built dynamically for every user.**
 
-**Level 1 — highest probability for this profession/geo:**
+### Step 2a: Discover platforms via web search
+
+Before showing any list, actively search for platforms relevant to this user's profile. Run ALL of the following searches in parallel:
+
+1. `"[profession] job board remote [year]"` — niche job boards for this profession
+2. `"[profession] jobs remote salary [currency] site:reddit.com"` — community recommendations
+3. `"remote jobs [profession] [geo region] [year]"` — geo-relevant platforms
+4. `"best platforms to find remote [profession] jobs [year]"` — aggregator roundups
+5. `"[profession] freelance platforms [year]"` — if freelance is relevant
+6. Check known remote-first boards: Himalayas, Remote OK, We Work Remotely, Dynamite Jobs, JustRemote, DailyRemote, ARC (IT), CONTRA (freelance/no commission), Wellfound, Remote.co
+
+From search results, extract: platform name, URL, what it's known for, whether it's free, whether it supports the user's geo.
+
+**If web search fails** — fall back to the known boards list above, note in report: "Platform discovery search failed — using default list. Run Phase 5 to expand."
+
+### Step 2b: Build personalized platform list
+
+From discovered platforms, select the most relevant based on profile. Organize into priority levels:
+
+**Level 1 — highest probability for this profession/geo** (select 3–5):
 - Russian-speaking IT → hh.ru + country HH domains (hh.kz, hh.uz, hh.ge, hh.am, cy.hh.ru, rabota.by), Habr Career, getmatch.ru, geekjob.ru
-- International IT → LinkedIn, Indeed, Glassdoor, Wellfound, Remote.co
-- Design → Behance Jobs, Dribbble Jobs, LinkedIn
-- Marketing → LinkedIn, local job boards
-- Finance / Analytics → LinkedIn, eFinancialCareers, local boards
+- International IT/remote → LinkedIn, Himalayas, Remote OK, ARC, Wellfound
+- Design → Behance Jobs, Dribbble Jobs, LinkedIn, CONTRA
+- Marketing → LinkedIn, We Work Remotely, Remote OK
+- Finance / Analytics → LinkedIn, eFinancialCareers, Himalayas
+- Any remote role → We Work Remotely, Dynamite Jobs, JustRemote, DailyRemote, Remote OK
 
-**Level 2 — aggregators and niche platforms** (per profession)
+**Level 2 — secondary sources** (select 3–5 from discovered platforms):
+- **CONTRA** (contra.com) — freelance marketplace, zero commission for the freelancer
+- **HIMALAYAS** (himalayas.app) — shows salary range, timezone, and which countries the company hires from; transparent by design
+- **DYNAMITE JOBS** (dynamitejobs.com) — 100% remote roles, each listing manually verified
+- **WE WORK REMOTELY** (weworkremotely.com) — one of the largest remote job boards; use "Anywhere in the World" filter carefully (some listings are US-only despite the filter)
+- **DAILYREMOTE** (dailyremote.com) — aggregator updated daily, strong for entry-level and mid-level
+- **JUSTREMOTE** (justremote.co) — scrapes company career pages directly, fewer middlemen, less competition
+- **REMOTE OK** (remoteok.com) — salary filter available; good for tech and design
+- **ARC** (arc.dev) — IT and engineering only; profile-based, companies reach out to you rather than the reverse
 
-**Level 3 — Telegram channels** (live, active — see Phase 2b)
+**Level 3 — Telegram channels** (see Phase 2c)
 
-Show the user the list with a reason for each platform. Ask them to:
-1. Confirm the list (they can remove items)
-2. Log in to each platform in their browser
+### Step 2c: Telegram channel discovery
 
-**For each platform:**
-- Open in browser, verify login
-- Record **all domains** actually used (including auth.*, api.*, static.*, subdomains)
-- Save the full domain list to profile
-
-**Permission rule — ONCE ONLY:** After confirming each platform, show the user the complete domain list and ask them to add ALL of it to "Always allowed" in browser settings. Explain: this prevents daily re-prompts. Example for hh.ru: `hh.ru, hh.kz, hh.uz, hh.ge, hh.am, cy.hh.ru, rabota.by, auth.hh.ru, api.hh.ru, static.hh.ru`. **Never ask for permissions again after onboarding.**
-
-### Phase 2b: Telegram channel discovery
+**MANDATORY step. Must be attempted even if result is 0 channels.**
 
 Go to tgstat.ru and telemetr.io. Search using profession keywords.
 
@@ -127,25 +169,54 @@ Go to tgstat.ru and telemetr.io. Search using profession keywords.
 
 Find 5–15 live channels. Save to profile with date of last post. Open in web.telegram.org to verify access.
 
+**If tgstat.ru / telemetr.io are unavailable** — note in report: "Telegram channel discovery failed: [reason]. No Telegram channels added. Will retry on next Phase 5 run." Continue.
+
+### Step 2d: Present list and get confirmation
+
+Show the user the full platform list with a reason for each. Ask them to:
+1. Confirm the list (they can remove items)
+2. Log in to each platform in their browser
+
+**For each platform:**
+- Open in browser, verify login
+- Record **all domains** actually used (including auth.*, api.*, static.*, subdomains)
+- Save the full domain list to profile
+
+**If a platform login fails** — mark it as "needs setup", note in report, continue with others.
+
+**Permission rule — ONCE ONLY:** After confirming each platform, show the user the complete domain list and ask them to add ALL of it to "Always allowed" in browser settings. **Never ask for permissions again after onboarding.**
+
+After completion: write `platforms_ready: true` and `platforms_built_date: [date]` to profile.
+
 ---
 
 ## Phase 3: Daily search run
 
-**Before starting:** check `last_run_date` in profile. If it equals today's date — ask the user: "The daily search was already run today. Run again?" Do not re-run automatically.
+**MANDATORY on every run. Cannot be skipped.**
 
-**Cold start check:** if `last_run_date` is more than 14 days ago — notify the user in their language: "Last run was [date]. Checking platform auth and channel activity before searching." Then: verify login on each platform (mark any needing re-auth), run Phase 5 channel check before proceeding.
+**Before starting:** check `last_run_date` in profile. If it equals today's date — ask the user (interactive only): "The daily search was already run today. Run again?" In scheduled mode — skip and note in report.
+
+**Cold start check:** if `last_run_date` is more than 14 days ago — notify the user: "Last run was [date]. Checking platform auth and channel activity before searching." Then: verify login on each platform (mark any needing re-auth), run Phase 5 channel check before proceeding.
+
+**Platform list check:** if `platforms_ready: true` is NOT in profile — run Phase 2 first (interactive) or note in report that platforms were not set up and search will use defaults (scheduled).
 
 ### Step 1: Resume check
 
+**MANDATORY. Must run before every search.**
+
 Read current resume from profile. Compare with previous version (hash or file date).
 
-**If resume changed AND a search run is already in progress** — do not interrupt the current run. Finish the current run using the previous resume version, then process the new resume, update the profile, and note at the top of the report: "📄 Resume updated mid-run — new skills will apply from the next search."
+**If resume not found in profile** — note in report: "Resume not found in profile. Search will run without resume matching. Add resume via Phase 4." Continue.
+
+**If resume changed AND a search run is already in progress** — finish the current run using the previous resume version, then process the new resume, update the profile, and note at the top of the report: "📄 Resume updated mid-run — new skills will apply from the next search."
 
 **If resume changed before the run starts** — re-read, update extracted skills and stack in profile, note at top of report: "📄 Resume updated — new skills applied to search."
 
 **If user says "update resume" or uploads a new file mid-run** — acknowledge receipt, queue the update, finish current run, then process. Confirm: "Resume received. Will apply to next search."
 
 ### Step 2: Platform search
+
+**MANDATORY. Must attempt every platform in the list.**
 
 For each platform in priority order:
 1. Open in browser (using saved sessions)
@@ -154,15 +225,21 @@ For each platform in priority order:
 4. Exclude already-seen (compare with history in memory)
 5. Add to shared pool
 
-**If browser hits a login page** — do NOT abort the run. Mark platform as "needs re-auth", continue with others, note in report.
+**If browser hits a login page** — do NOT abort the run. Mark platform as "needs re-auth", note in Technical Notes, continue with next platform.
+**If a platform is down or unreachable** — note in Technical Notes, continue with next platform.
+**Never skip a platform silently.** Every skipped platform must appear in Technical Notes with the reason.
 
 ### Step 3: Telegram channel search
 
+**MANDATORY if channels exist in profile. Must be attempted.**
+
 Open web.telegram.org. Open each channel. Review posts from the last 24h (or since last run). Extract job links. If channels mention other active channels — add to check list.
 
-**Fallback:** If web.telegram.org is unavailable or login fails — skip Telegram for this run, note in report, continue with other sources.
+**If web.telegram.org is unavailable or login fails** — note in Technical Notes: "Telegram search skipped: [reason]." Continue with other sources.
 
 ### Step 4: LinkedIn search
+
+**MANDATORY if LinkedIn is in platform list.**
 
 Use advanced LinkedIn search — not only through "Jobs" but also:
 - HR posts with hashtags: #hiring #vacancy #openrole #вакансия #открытавакансия
@@ -171,6 +248,8 @@ Use advanced LinkedIn search — not only through "Jobs" but also:
 
 Capture direct vacancy links, not just company pages.
 
+**If LinkedIn is unavailable or login fails** — note in Technical Notes, continue.
+
 ### Step 5: Filtering and ranking
 
 For each vacancy:
@@ -178,7 +257,7 @@ For each vacancy:
 2. **Geo check**: remove if not remote or wrong region
 3. **Salary**: remove if below threshold (when listed)
 4. **Freshness**: remove if older than profile limit
-5. **Deduplication**: company + role pair must not exist in history. If the same company appears with a DIFFERENT role — keep it, it is a new application. If the same company + same role title — remove.
+5. **Deduplication**: company + role pair must not exist in history. Same company + different role = keep. Same company + same role = remove.
 
 After filtering — rank by relevance:
 - Key skills match from resume
@@ -186,7 +265,7 @@ After filtering — rank by relevance:
 - Presence of "nice-to-haves" that are in the resume
 - Salary level (when listed)
 
-**If 0 vacancies remain after filtering** — do NOT silently create an empty report. Instead, generate the report artifact with zeros AND include a "Why nothing passed" breakdown:
+**If 0 vacancies remain after filtering** — do NOT silently create an empty report. Generate the report with zeros AND include a "Why nothing passed" breakdown:
 
 ```
 ## 🔍 Why 0 vacancies passed filters
@@ -210,11 +289,11 @@ Read `auto_apply_limit` from profile.
 
 **If `auto_apply_limit: unlimited`** — apply to all vacancies that passed filtering.
 
-**In both cases:** before sending, show the user a confirmation in their language:
-"Found [total filtered] vacancies. Will apply to [N / all of them]. Continue?"
-Wait for confirmation before submitting anything.
+**Confirmation rule:**
+- Interactive session: show confirmation before applying. Wait for user.
+- Scheduled / automated session: apply automatically without asking. Note in report: "Auto-applied without confirmation (scheduled run)."
 
-For each vacancy in the confirmed list:
+For each vacancy in the list:
 
 **If platform supports browser-based application:**
 1. Open the vacancy
@@ -223,11 +302,10 @@ For each vacancy in the confirmed list:
 4. Submit
 5. Record in application history
 
-**If vacancy page loads but has no direct application URL** — attempt one additional click to reach the application form. If URL is still unavailable after that — add to "action required" list with note "direct link unavailable — open manually". Never insert a blank or placeholder link in the report.
-
+**If vacancy page loads but has no direct application URL** — attempt one additional click. If still unavailable — add to "action required" list with note "direct link unavailable — open manually".
 **If vacancy requires a test task** — do NOT auto-apply. Add to separate list in report.
-
 **If application requires email / form** — add to "action required" list in report.
+**If application fails for any reason** — note in Technical Notes with vacancy link and error. Do not retry. Continue.
 
 ### Cover Letter Framework
 
@@ -235,65 +313,64 @@ Cover letters must be **short**: 4–5 sentences total (greeting + body + closin
 
 **Before writing:** extract from the vacancy — company name, product/service, key challenge or need, top 2–3 required skills. Cross-reference with resume. Select format based on role type.
 
-**Cover letter language rule:** Write in the **language the vacancy is posted in** — regardless of the user's profile language. A Russian-speaking user applying to an English-language vacancy gets an English cover letter, and vice versa.
+**Cover letter language rule:** Write in the **language the vacancy is posted in** — regardless of the user's profile language.
 
 ---
 
 ### Cover letter structure (mandatory for every letter)
 
-Every cover letter — regardless of format or language — must follow this 4-block structure:
+Every cover letter must follow this 4-block structure:
 
 **Block 1 — Greeting**
-Address the hiring team by name if available in the vacancy; otherwise use a standard professional greeting appropriate for the language and culture:
+Address the hiring team by name if available; otherwise use a standard professional greeting:
 - Russian: «Добрый день!» / «Здравствуйте!»
 - English: «Hello [Name],» / «Dear Hiring Team,»
-Never skip the greeting. Never open with the applicant's name, resume summary, or a statement about why they're writing.
+Never skip the greeting.
 
 **Block 2 — Brief self-introduction (1 sentence)**
-One sentence stating who the applicant is — role title and a key differentiator relevant to this specific vacancy. Do NOT list experience years or summarize the full resume.
-- Russian example: «Я системный аналитик с опытом в платёжных интеграциях и проектировании API.»
-- English example: «I'm a systems analyst specializing in payment integrations and API design."
-Use the title the user goes by: «системный аналитик» or «системный аналитик (фулстек)» — never «бизнес-аналитик» or «business analyst».
+One sentence: role title + key differentiator relevant to this vacancy. Do NOT list experience years.
+- Use the title the user goes by exactly as stored in profile.
 
 **Block 3 — Body (2–3 sentences, vacancy-specific)**
-This is the core. Choose a format based on role type:
+Choose format based on role type:
 
-**Format A — Problem-Solution** (default for most roles):
-> S1: Name a specific challenge the company likely faces — based on the vacancy text or company context. Concrete, not generic.
-> S2: State how your experience directly addresses it. One concrete example with a result (number, outcome, or scale) from the resume.
-> S3: Connect 1–2 specific skills from the resume to the vacancy's key requirements, using the company's own language.
+**Format A — Problem-Solution** (default):
+> S1: Specific challenge the company faces (from vacancy text).
+> S2: How your experience addresses it — one concrete example with result.
+> S3: Connect 1–2 resume skills to vacancy requirements using the company's own language.
 
-**Format B — Achievement-First** (for technical / results-driven roles: developer, analyst, QA, data engineer):
-> S1: Lead with the single most relevant qualification or achievement for this specific role.
-> S2: Connect it to the vacancy's top requirement with a specific number or outcome from the resume.
-> S3: One sentence on why this company or product is genuinely interesting — specific, not generic.
+**Format B — Achievement-First** (technical roles: developer, analyst, QA, data):
+> S1: Most relevant qualification or achievement for this role.
+> S2: Connect to vacancy's top requirement with a specific number or outcome.
+> S3: Why this company/product is genuinely interesting — specific, not generic.
 
-**Format C — Story Hook** (for creative, leadership, or mission-driven roles):
-> S1: A brief vivid moment or turning point that connects the career path to this role — concrete, not clichéd.
-> S2: How that experience shaped a skill or approach that directly matches this vacancy's core need.
-> S3: Why this specific company is the logical next step.
+**Format C — Story Hook** (creative, leadership, mission-driven roles):
+> S1: Brief vivid moment connecting career path to this role.
+> S2: How that shaped a skill matching this vacancy's core need.
+> S3: Why this company is the logical next step.
 
 **Block 4 — Closing**
-A short professional sign-off: willingness to discuss, availability for a call or interview, and a polite farewell.
+Short professional sign-off with name.
 - Russian: «Готова рассказать подробнее на встрече. С уважением, [Имя]»
-- English: «I'd be happy to discuss further. Best regards, [Name]"
-Always include the applicant's name at the end. Never end the letter abruptly without a closing line.
+- English: «I'd be happy to discuss further. Best regards, [Name]»
 
 ---
 
 **Rules for all formats:**
-- Always include all 4 blocks: Greeting → Self-intro → Body → Closing
-- Every claim must be verifiable against the resume — no invented achievements
-- Use the company's own vocabulary from the vacancy description
+- All 4 blocks always present
+- Every claim verifiable against resume — no invented achievements
+- Use the company's own vocabulary
 - Never mention salary
 - Never restate the resume in paragraph form
-- Never use generic openers in the body: "I am writing to express my interest", "I am a passionate professional"
-- Never apologize for gaps or missing qualifications — lead with what you bring
-- All skills mentioned in the letter must exist in the resume
-- Write in the **language of the vacancy**, not the user's profile language
-- Role title: always «системный аналитик» or «системный аналитик (фулстек)» — never «бизнес-аналитик» or «business analyst» in any language
+- Never use generic openers: "I am writing to express my interest"
+- Never apologize for gaps
+- All skills mentioned must exist in the resume
+- Write in the language of the vacancy
+- Role title: use exactly what is stored in the user's profile — never substitute a different title
 
 ### Step 7: Report
+
+**MANDATORY. Must always be created, even if all phases failed.**
 
 Create an artifact — daily report. Write in the user's chosen language.
 
@@ -301,6 +378,7 @@ Create an artifact — daily report. Write in the user's chosen language.
 # 🔍 Job Search Report — [date]
 
 ## 📊 Summary
+- Platforms searched: N of N
 - Vacancies found: N
 - After filtering: N
 - Auto-applied: N
@@ -343,8 +421,10 @@ Create an artifact — daily report. Write in the user's chosen language.
 
 ---
 
-## ⚠️ Technical notes
-(Re-auth needed, dead channels, platforms skipped, resume updated mid-run, etc.)
+## ⚠️ Technical Notes
+[MANDATORY section — always present, even if empty]
+[List every skipped platform, failed login, unavailable tool, or phase that could not complete — with exact reason]
+[If all phases completed successfully: "All phases completed successfully."]
 ```
 
 After creating the report: update `last_run_date` to today in `/areas/job-hunter-profile.md`.
@@ -365,13 +445,73 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 
 ## Phase 5: Source expansion (weekly or on request)
 
-Runs automatically once a week, or when user says "find new channels / platforms".
+**Runs automatically once a week** (check `last_source_expansion_date` in profile), or when user says "find new channels / platforms".
 
-- Check activity of current Telegram channels (remove ones with last post > 30 days)
-- Search for new channels on tgstat.ru / telemetr.io
-- Web search for new niche platforms: "[profession] job board [year]", "[profession] jobs Telegram"
-- Update list in profile
-- Include as separate block in next report: "Search sources updated: added N, removed N"
+**MANDATORY weekly step. Cannot be skipped if 7+ days have passed since last expansion.**
+
+1. Check activity of current Telegram channels (remove ones with last post > 30 days)
+2. Search for new Telegram channels on tgstat.ru / telemetr.io
+3. Run web search: `"[profession] job board [year]"`, `"[profession] jobs remote [year]"`, `"best remote job sites [year]"`
+4. Compare found platforms with existing list — add new ones that passed criteria
+5. Update platform list and `last_source_expansion_date` in profile
+6. Include as separate block in next report: "Search sources updated: added N, removed N"
+
+**If expansion search fails** — note in Technical Notes. Do not skip the check itself.
+
+---
+
+## Phase 6: Open calls, grants, and residencies search
+
+Trigger: user asks to find open calls, grants, residencies, art competitions, or similar opportunities. Run independently from Phase 3.
+
+### Search horizon and date rules
+
+**Search ahead at least 6 months from today's date.** Never include opportunities with deadlines that have already passed (deadline < today) or that expire within 1–2 days. When a deadline is marked "rolling" or "ongoing" — include it, note it as rolling.
+
+**Freshness rule:** if a call has no listed deadline and no activity sign in the last 3 months — skip it.
+
+### Step 1: Search
+
+Use WebSearch with queries like:
+- "open call artists [month] [year]"
+- "artist grants deadline [month+1 to month+6] [year]"
+- "artist residency open application [season] [year]"
+- "open call photographers / illustrators / painters [year]" (adapt to the user's medium)
+- Check aggregator sites: thisiscolossal.com (monthly roundups), reviewedbyartists.com, callopen.art, opencallradar.com, resartis.org, artrabbit.com/artist-opportunities, artworkarchive.com/calls-for-entry
+
+Search multiple queries and months in parallel to cover the full 6-month window.
+
+### Step 2: Filter
+
+For each result:
+1. **Deadline check** — must be today or later (and not within 1–2 days unless user asked for urgent). Skip anything already closed.
+2. **Horizon check** — deadline must fall within 6 months from today.
+3. **Relevance** — matches the user's creative medium / discipline (if specified).
+4. **Rolling** — if deadline is listed as rolling / ongoing, include and label clearly.
+
+### Step 3: Verify all links
+
+**Every link must be verified before inclusion in the report.** For each entry:
+1. Try WebFetch on the URL. If the page loads and shows the correct open call with a matching deadline — mark ✓.
+2. If WebFetch is blocked — use WebSearch to find a secondary source confirming the URL and deadline are current. Mark as "confirmed via search".
+3. If the link leads to a 404, an unrelated page, a closed call, or a prior cycle — find the correct URL or remove the entry.
+4. If the correct current URL cannot be found after one search attempt — remove the entry. Do not include unverified links.
+5. Pay attention to cycle years: a URL containing an earlier year in its path is likely a prior cycle — verify before including.
+
+### Step 4: Report
+
+Output as a Claude Docs document (or update an existing one). Organize into sections: Гранты / Grants, Резиденции / Residencies, Опен-коллы / Open Calls, Агрегаторы / Aggregators. Use a table per section: Name | Prize/Terms | Deadline | Link.
+
+**Deadline display rules:**
+- Show the exact date (day + month + year) when known.
+- Never show a date that has passed.
+- Mark rolling deadlines as «Rolling» / «Ongoing».
+- If deadline is uncertain, write «Уточнить» / «Check website» and link directly to the apply page.
+
+**Link rules:**
+- Link text should be the domain name only (e.g. `pkf.org`).
+- The href must point to the apply or info page for that specific call — not a homepage.
+- Never include a link you have not verified.
 
 ---
 
@@ -380,9 +520,11 @@ Runs automatically once a week, or when user says "find new channels / platforms
 File `/areas/job-hunter-profile.md`:
 - `language`: chosen language (set in Phase 0)
 - `security_checked: true` (set after Phase 0 completes)
+- `platforms_ready: true` + `platforms_built_date` (set after Phase 2 completes)
 - `last_run_date`: date of last Phase 3 run
-- `auto_apply_limit`: unlimited or N (set in Phase 1, changeable anytime)
-- User profile: profession, keywords, geo, remote preference, salary threshold, experience level, exclusions
+- `last_source_expansion_date`: date of last Phase 5 run
+- `auto_apply_limit`: unlimited or N
+- User profile: profession, keywords, geo, remote preference, salary threshold, experience level, exclusions, job title (as user calls it)
 - Resume: file path / link / hash of last version / extracted skills and stack
 - Platform list with priorities and full domain lists for permissions
 - Telegram channel list with date of last post and last check
@@ -392,24 +534,28 @@ File `/areas/job-hunter-profile.md`:
 
 ## Key principles
 
-**Don't stop on minor errors.** One platform down → continue with others, note in report. Never abort the full run.
+**No phase may be skipped silently.** Every skipped or failed step must appear in Technical Notes with the exact reason.
 
-**Permissions — once only.** Full domain list collected at onboarding, bulk-added by user. Never re-request.
+**No questions during scheduled runs.** Automated sessions proceed without asking. Everything unresolved goes to Technical Notes.
 
-**Cover letters — structured and specific.** 4 mandatory blocks: Greeting → Self-intro (1 sentence, role title) → Body (2–3 sentences, vacancy-specific) → Closing with name. Total 4–5 sentences. Every claim verifiable against resume. Format chosen per role type. Never mention salary. Always in the vacancy's language. Role title: always «системный аналитик» — never «бизнес-аналитик».
+**Platform list is never hardcoded.** It is always built via Phase 2 discovery search and expanded via Phase 5. Using only hh.ru or LinkedIn by default is a failure.
 
-**Report — artifact only.** Not in chat. Direct links in every section. If a link is unavailable — write "open manually", never leave it blank.
+**Cover letters — structured and specific.** 4 mandatory blocks. Total 4–5 sentences. Every claim verifiable against resume. Role title exactly as stored in profile.
+
+**Report is always created.** Even if 0 vacancies found or multiple phases failed. A report with Technical Notes is the minimum deliverable of every run.
 
 **Resume — live.** Check hash on every run. If changed before run → apply immediately. If changed mid-run → queue and apply next run.
 
-**Language — consistent.** Set once in Phase 0. Used everywhere: messages, onboarding, reports, error notes. Cover letters use the vacancy's language, not profile language.
+**Language — consistent.** Set once in Phase 0. Used everywhere. Cover letters use the vacancy's language.
 
-**Auto-apply limit — user's choice.** Set at onboarding, changeable anytime with a single phrase. Always confirm before sending.
+**Auto-apply limit — user's choice.** Set at onboarding, changeable anytime. In scheduled mode — applied automatically without confirmation.
 
 **Cold start detection.** If last run > 14 days ago → verify auth and channel activity before searching.
 
-**Zero results — always explain.** If 0 vacancies pass filters → create report with breakdown of why, and notify in chat with a suggestion to relax the top filter.
+**Zero results — always explain.** Create report with breakdown and notify in chat.
 
-**Deduplication is per company+role pair.** Same company, different role = allowed. Same company + same role = skip.
+**Deduplication is per company+role pair.** Same company + different role = allowed. Same company + same role = skip.
 
-**Existing profile import.** On first run, check both `/areas/job-hunter-profile.md` and `/areas/job-search.md`. If either has usable data → offer to import instead of asking everything from scratch.
+**Phase 5 is weekly and mandatory.** If 7+ days since last source expansion — run it before Phase 3.
+
+**Open calls — 6-month horizon, verified links only.** Never include expired deadlines. Always verify every URL. Rolling deadlines allowed — label them clearly.
