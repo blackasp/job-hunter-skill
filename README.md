@@ -10,11 +10,12 @@ Works for any profession, any country, any language.
 - **Daily reports** — artifact with all found vacancies and direct links
 - **Auto-applications** — submits applications where browser automation is possible
 - **Smart filtering** — by stack, geo, salary, work format
-- **Cover letters** — short (80–120 words), unique per vacancy, written in the vacancy's language
+- **Cover letters** — short (4–5 sentences), unique per vacancy, written in the vacancy's language
 - **Multi-platform search** — hh.ru, LinkedIn, Habr Career, Telegram channels, niche job boards
 - **Telegram channel discovery** — automatically finds active channels via tgstat.ru / telemetr.io
 - **Resume tracking** — detects changes on every run
 - **Security audit** — self-checks before working with personal data
+- **Open calls, grants & residencies** — finds artistic opportunities with deadline verification (6-month horizon)
 
 ---
 
@@ -81,12 +82,30 @@ Set up a scheduled task in Claude Code — the skill will run automatically ever
 
 ---
 
+## Open calls, grants & residencies (Phase 6)
+
+A separate mode for creative practitioners — run independently from the job search.
+
+```
+Find open calls for artists
+```
+
+**Rules:**
+- **6-month horizon** — searches at least 6 months ahead from today's date
+- **No expired deadlines** — any opportunity with a deadline before today is excluded
+- **Link verification** — every link is checked: must resolve without error, lead to the current cycle's page (not a prior year's closed call), and point to the specific apply page (not a generic homepage)
+- Rolling / ongoing deadlines are included and labeled clearly
+- Results organized into: Grants · Residencies · Open Calls · Aggregators
+
+---
+
 ## Limitations
 
 - Auto-applications only work where browser UI is available
 - Vacancies with test tasks go to a separate list — no auto-apply
 - Telegram search requires an active session in web.telegram.org
 - The skill never stores passwords or asks for API keys
+- Open call link verification may fall back to secondary sources when direct fetch is blocked
 
 ---
 
@@ -109,11 +128,12 @@ Set up a scheduled task in Claude Code — the skill will run automatically ever
 - **Ежедневные отчёты** — артефакт со всеми найденными вакансиями и прямыми ссылками
 - **Авто-отклики** — подаёт заявки там, где возможно через браузер
 - **Умная фильтрация** — по стеку, гео, зарплате, формату работы
-- **Сопроводительные письма** — короткие (80–120 слов), уникальные для каждой вакансии, на языке вакансии
+- **Сопроводительные письма** — короткие (4–5 предложений), уникальные для каждой вакансии, на языке вакансии
 - **Поиск везде** — hh.ru, LinkedIn, Habr Career, Telegram-каналы, нишевые борды
 - **Telegram-каналы** — автоматически находит живые каналы через tgstat.ru / telemetr.io
 - **Отслеживание резюме** — обнаруживает изменения при каждом запуске
 - **Безопасность** — самопроверка перед работой с личными данными
+- **Опен-коллы, гранты и резиденции** — поиск творческих возможностей с проверкой дедлайнов (горизонт 6 месяцев)
 
 ---
 
@@ -180,12 +200,30 @@ Set up a scheduled task in Claude Code — the skill will run automatically ever
 
 ---
 
+## Опен-коллы, гранты и резиденции (Фаза 6)
+
+Отдельный режим для творческих практиков — запускается независимо от поиска работы.
+
+```
+Найди опен-коллы для художников
+```
+
+**Правила:**
+- **Горизонт 6 месяцев** — поиск не менее чем на 6 месяцев вперёд от текущей даты
+- **Без просроченных дедлайнов** — любая возможность с дедлайном раньше сегодняшнего дня исключается
+- **Проверка ссылок** — каждая ссылка проверяется: должна открываться без ошибки, вести на страницу текущего цикла (не прошлогоднего закрытого конкурса) и указывать на конкретную страницу подачи (не общую главную)
+- Rolling / ongoing дедлайны включаются и помечаются отдельно
+- Результаты сгруппированы по: Гранты · Резиденции · Опен-коллы · Агрегаторы
+
+---
+
 ## Ограничения
 
 - Авто-отклики работают только там, где есть браузерный интерфейс
 - Вакансии с тестовым заданием — в отдельный список, без авто-отклика
 - Telegram-поиск требует активной сессии в web.telegram.org
 - Скилл не хранит пароли и не запрашивает API-ключи
+- Проверка ссылок для опен-коллов может использовать вторичные источники, если прямой доступ заблокирован
 
 ---
 
