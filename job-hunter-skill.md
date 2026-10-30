@@ -231,7 +231,7 @@ For each vacancy in the confirmed list:
 
 ### Cover Letter Framework
 
-Cover letters must be **short**: 3–5 sentences, **80–120 words maximum**. Hiring managers don't read long letters. Every letter is unique and specific to this vacancy — never a template, never reused.
+Cover letters must be **short**: 4–5 sentences total (greeting + body + closing). Every letter is unique and specific to this vacancy — never a template, never reused.
 
 **Before writing:** extract from the vacancy — company name, product/service, key challenge or need, top 2–3 required skills. Cross-reference with resume. Select format based on role type.
 
@@ -239,38 +239,59 @@ Cover letters must be **short**: 3–5 sentences, **80–120 words maximum**. Hi
 
 ---
 
-**Format A — Problem-Solution** (default for most roles):
+### Cover letter structure (mandatory for every letter)
 
-> **S1:** Name a specific challenge the company likely faces — based on the vacancy text or company context. Concrete, not generic.
-> **S2:** State how your experience directly addresses it. One concrete example with a result (number, outcome, or scale) from the resume.
-> **S3:** Connect 1–2 specific skills from the resume to the vacancy's key requirements, using the company's own language.
-> **S4:** Short call to action — availability for a call or interview.
+Every cover letter — regardless of format or language — must follow this 4-block structure:
+
+**Block 1 — Greeting**
+Address the hiring team by name if available in the vacancy; otherwise use a standard professional greeting appropriate for the language and culture:
+- Russian: «Добрый день!» / «Здравствуйте!»
+- English: «Hello [Name],» / «Dear Hiring Team,»
+Never skip the greeting. Never open with the applicant's name, resume summary, or a statement about why they're writing.
+
+**Block 2 — Brief self-introduction (1 sentence)**
+One sentence stating who the applicant is — role title and a key differentiator relevant to this specific vacancy. Do NOT list experience years or summarize the full resume.
+- Russian example: «Я системный аналитик с опытом в платёжных интеграциях и проектировании API.»
+- English example: «I'm a systems analyst specializing in payment integrations and API design."
+Use the title the user goes by: «системный аналитик» or «системный аналитик (фулстек)» — never «бизнес-аналитик» or «business analyst».
+
+**Block 3 — Body (2–3 sentences, vacancy-specific)**
+This is the core. Choose a format based on role type:
+
+**Format A — Problem-Solution** (default for most roles):
+> S1: Name a specific challenge the company likely faces — based on the vacancy text or company context. Concrete, not generic.
+> S2: State how your experience directly addresses it. One concrete example with a result (number, outcome, or scale) from the resume.
+> S3: Connect 1–2 specific skills from the resume to the vacancy's key requirements, using the company's own language.
 
 **Format B — Achievement-First** (for technical / results-driven roles: developer, analyst, QA, data engineer):
-
-> **S1:** Lead with the single most relevant qualification or achievement for this specific role.
-> **S2:** Connect it to the vacancy's top requirement with a specific number or outcome from the resume.
-> **S3:** One sentence on why this company or product is genuinely interesting — specific, not generic.
-> **S4:** Call to action.
+> S1: Lead with the single most relevant qualification or achievement for this specific role.
+> S2: Connect it to the vacancy's top requirement with a specific number or outcome from the resume.
+> S3: One sentence on why this company or product is genuinely interesting — specific, not generic.
 
 **Format C — Story Hook** (for creative, leadership, or mission-driven roles):
+> S1: A brief vivid moment or turning point that connects the career path to this role — concrete, not clichéd.
+> S2: How that experience shaped a skill or approach that directly matches this vacancy's core need.
+> S3: Why this specific company is the logical next step.
 
-> **S1:** A brief vivid moment or turning point that connects the career path to this role — concrete, not clichéd.
-> **S2:** How that experience shaped a skill or approach that directly matches this vacancy's core need.
-> **S3:** Why this specific company is the logical next step.
-> **S4:** Call to action.
+**Block 4 — Closing**
+A short professional sign-off: willingness to discuss, availability for a call or interview, and a polite farewell.
+- Russian: «Готова рассказать подробнее на встрече. С уважением, [Имя]»
+- English: «I'd be happy to discuss further. Best regards, [Name]"
+Always include the applicant's name at the end. Never end the letter abruptly without a closing line.
 
 ---
 
 **Rules for all formats:**
+- Always include all 4 blocks: Greeting → Self-intro → Body → Closing
 - Every claim must be verifiable against the resume — no invented achievements
 - Use the company's own vocabulary from the vacancy description
 - Never mention salary
 - Never restate the resume in paragraph form
-- Never use generic openers: "I am writing to express my interest", "I am a passionate professional"
+- Never use generic openers in the body: "I am writing to express my interest", "I am a passionate professional"
 - Never apologize for gaps or missing qualifications — lead with what you bring
 - All skills mentioned in the letter must exist in the resume
 - Write in the **language of the vacancy**, not the user's profile language
+- Role title: always «системный аналитик» or «системный аналитик (фулстек)» — never «бизнес-аналитик» or «business analyst» in any language
 
 ### Step 7: Report
 
@@ -375,7 +396,7 @@ File `/areas/job-hunter-profile.md`:
 
 **Permissions — once only.** Full domain list collected at onboarding, bulk-added by user. Never re-request.
 
-**Cover letters — short and specific.** 80–120 words max. Specific to this vacancy. Every claim verifiable against resume. Format chosen per role type. Never mention salary. Always in the vacancy's language.
+**Cover letters — structured and specific.** 4 mandatory blocks: Greeting → Self-intro (1 sentence, role title) → Body (2–3 sentences, vacancy-specific) → Closing with name. Total 4–5 sentences. Every claim verifiable against resume. Format chosen per role type. Never mention salary. Always in the vacancy's language. Role title: always «системный аналитик» — never «бизнес-аналитик».
 
 **Report — artifact only.** Not in chat. Direct links in every section. If a link is unavailable — write "open manually", never leave it blank.
 
