@@ -11,7 +11,7 @@ Works for any profession, any country, any language.
 - **Auto-applications** — submits applications where browser automation is possible
 - **Smart filtering** — by stack, geo, salary, work format
 - **Cover letters** — short (4–5 sentences), unique per vacancy, written in the vacancy's language
-- **Multi-platform search** — hh.ru, LinkedIn, Habr Career, Telegram channels, niche job boards
+- **Multi-platform search** — hh.ru, LinkedIn, Habr Career, Telegram channels, niche job boards; **+8 remote platforms**: CONTRA, Himalayas, Dynamite Jobs, We Work Remotely, DailyRemote, JustRemote, Remote OK, ARC
 - **Telegram channel discovery** — automatically finds active channels via tgstat.ru / telemetr.io
 - **Resume tracking** — detects changes on every run
 - **Security audit** — self-checks before working with personal data
@@ -74,11 +74,14 @@ Set up a scheduled task in Claude Code — the skill will run automatically ever
 ## What happens on each run
 
 1. Checks resume for changes
-2. Searches all platforms and Telegram channels
-3. Filters and ranks by your profile
-4. Asks for confirmation before applying
-5. Submits applications with unique cover letters
-6. Creates a report artifact with direct links
+2. **Dynamically discovers platforms** via web search (never uses a fixed hardcoded list)
+3. Searches all platforms and Telegram channels
+4. Filters and ranks by your profile
+5. Asks for confirmation before applying (or applies automatically in scheduled mode)
+6. Submits applications with unique cover letters
+7. Creates a report artifact with direct links — **always created, even if 0 vacancies found**
+
+**Every phase is mandatory.** If a phase fails for technical reasons, the skill logs it in the report and continues automatically — it never stops mid-run to ask questions. This makes it safe to run as a scheduled task while you sleep.
 
 ---
 
@@ -129,7 +132,7 @@ Find open calls for artists
 - **Авто-отклики** — подаёт заявки там, где возможно через браузер
 - **Умная фильтрация** — по стеку, гео, зарплате, формату работы
 - **Сопроводительные письма** — короткие (4–5 предложений), уникальные для каждой вакансии, на языке вакансии
-- **Поиск везде** — hh.ru, LinkedIn, Habr Career, Telegram-каналы, нишевые борды
+- **Поиск везде** — hh.ru, LinkedIn, Habr Career, Telegram-каналы, нишевые борды; **+8 remote-платформ**: CONTRA, Himalayas, Dynamite Jobs, We Work Remotely, DailyRemote, JustRemote, Remote OK, ARC
 - **Telegram-каналы** — автоматически находит живые каналы через tgstat.ru / telemetr.io
 - **Отслеживание резюме** — обнаруживает изменения при каждом запуске
 - **Безопасность** — самопроверка перед работой с личными данными
@@ -192,11 +195,14 @@ Find open calls for artists
 ## Что происходит при каждом запуске
 
 1. Проверяет резюме на изменения
-2. Ищет вакансии на всех платформах и в Telegram-каналах
-3. Фильтрует и ранжирует по твоему профилю
-4. Спрашивает подтверждение перед откликами
-5. Отправляет отклики с уникальными письмами
-6. Создаёт отчёт-артефакт с прямыми ссылками
+2. **Динамически находит платформы** через веб-поиск (никакого жёстко заданного списка)
+3. Ищет вакансии на всех платформах и в Telegram-каналах
+4. Фильтрует и ранжирует по твоему профилю
+5. Спрашивает подтверждение перед откликами (или откликается автоматически при запуске по расписанию)
+6. Отправляет отклики с уникальными письмами
+7. Создаёт отчёт-артефакт — **всегда, даже если 0 вакансий найдено**
+
+**Каждая фаза обязательна.** Если фаза не выполнилась по технической причине — скилл записывает это в отчёт и идёт дальше автоматически. Никаких остановок и вопросов посреди запуска — можно ставить на ночное расписание.
 
 ---
 
