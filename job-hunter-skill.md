@@ -200,6 +200,99 @@ After filtering — rank by relevance:
 - Presence of "nice-to-haves" that are in the resume
 - Salary level (when listed)
 
+#### ⚠️ Critical: two-pass filter — all blockers must check the full text
+
+**Bug confirmed November 2026:** An early `filterFull` implementation only checked several blocker groups (1С, DWH, незнакомое ПО) against the vacancy *title*. Vacancies containing these keywords **only in the description** passed the filter and received auto-applications.
+
+**Root cause:** The variable `full = titleOnly + ' ' + desc` was defined but not consistently used. Checks for 1С, billing, DWH, and unknown software ran against `titleOnly` only, so a vacancy with "1С" exclusively in the description was not caught.
+
+**Fix:** Every blocker — except role matching, junior/intern detection, and the word-boundary BI title check (all title-only by design) — must run against `full`. Embed this canonical `filterFull` at the start of every run:
+
+```js
+window.W = s => new RegExp('(^|[^а-яёa-z0-9])(?:' + s + ')([^а-яёa-z0-9]|$)', 'i');
+
+window.filterFull = (name, desc) => {
+  const titleOnly = (name || '').replace(/\s+/g, ' ').trim();
+  const full = (titleOnly + ' ' + (desc || '')).replace(/\s+/g, ' ');
+
+  // 1. РОЛЬ — только заголовок
+  if (!/системный аналитик|system analyst|business analyst|technical business analyst|solutions analyst|integration analyst/i.test(titleOnly))
+    return { pass: false, reason: 'not-SA-BA' };
+
+  // 2. СТАЖИРОВКИ / ДЖУНЫ — только заголовок
+  if (/стажировк|стажер|стажёр|ищем\s+стаж/i.test(titleOnly))
+    return { pass: false, reason: 'intern' };
+  if (W('junior|intern|trainee').test(titleOnly))
+    return { pass: false, reason: 'junior' };
+  if (/младший\s+аналитик/i.test(titleOnly))
+    return { pass: false, reason: 'junior' };
+
+  // 3. BI / ДАТА-АНАЛИТИКА — заголовок + описание
+  if (/аналитик[а-яё]*\s+данных|data\s+analyst|data\s+scientist|data\s+engineer|power\s*bi|qlik|visiology|дашборд/i.test(full))
+    return { pass: false, reason: 'data-bi' };
+  if (W('bi').test(titleOnly))
+    return { pass: false, reason: 'BI-title' };
+
+  // 4. 1С / DWH / БИЛЛИНГ — заголовок + описание
+  if (/1[\s]?[сc](?![а-яёa-z])/i.test(full))
+    return { pass: false, reason: '1C' };
+  if (/биллинг|billing/i.test(full))
+    return { pass: false, reason: 'billing' };
+  if (/\bdwh\b|data[\s-]?lake|data[\s-]?warehouse|greenplum/i.test(full))
+    return { pass: false, reason: 'DWH' };
+
+  // 5. НЕЗНАКОМОЕ ПО — заголовок + описание
+  if (/camunda|elma\b|bpmsoft|creatio\b|битрикс\s*24|directum[\s-]?rx|ms[\s-]dynamics|microsoft[\s-]dynamics|navision|siebel|\bsap\b/i.test(full))
+    return { pass: false, reason: 'unknown-soft' };
+  if (/diasoft|диасофт|colvir|автоматизированн[а-яё]*\s+банковск/i.test(full))
+    return { pass: false, reason: 'banking-soft' };
+
+  // 6. БАНКОВСКИЕ КОРОБКИ — заголовок + описание
+  if (W('абс|abs|цфт|ибсо').test(full))
+    return { pass: false, reason: 'banking-box' };
+
+  // 7. ИБ / СЕТИ / ИНФРАСТРУКТУРА — заголовок + описание
+  if (/информационн[а-яё]*\s+безопасн|кибербезопасн|cyber[\s-]?security|appsec|devsecops|пентест|уязвимост|антивирус|\bngfw\b|\bфстэк\b|криптограф/i.test(full))
+    return { pass: false, reason: 'infosec' };
+  if (/сетев[а-яё]*\s+(технолог|оборудован|инфраструктур|протокол)|wi-?fi|маршрутизатор|коммутатор|систем[а-яё]*\s+хранения\s+данных|серверн[а-яё]*\s+(оборудован|инфраструктур)|виртуализац|гипервизор|дата-?центр|прошивк|firmware|асу\s*тп|scada|телеметри[а-яё]*/i.test(full))
+    return { pass: false, reason: 'network-infra' };
+  if (W('иб|soc|siem|dlp|sdn|схд|цод').test(full))
+    return { pass: false, reason: 'infosec-word' };
+
+  // 8. БЛОКЧЕЙН
+  if (/блокчейн|blockchain|web\s?3|смарт[\s-]?контракт|smart\s+contract|ethereum|solidity|hyperledger|криптовалют|криптоактив|криптобирж|токенизац/i.test(full))
+    return { pass: false, reason: 'blockchain' };
+  if (W('dlt|nft|цфа').test(full))
+    return { pass: false, reason: 'blockchain-word' };
+
+  // 9. ГОСТ / НМД
+  if (W('гост|гостов|еспд').test(full))
+    return { pass: false, reason: 'gost' };
+  if (/РД\s?50-34/i.test(full))
+    return { pass: false, reason: 'gost-rd' };
+
+  // 10. ГОССЕКТОР
+  if (/госсектор|гос[а-яё]*\s*орган|государственн[а-яё]*\s+(заказчик|учрежден|структур|организац)|правительств|министерств|ведомств|муниципальн|госуслуг|госзакуп|public\s+sector|e-?government/i.test(full))
+    return { pass: false, reason: 'gov' };
+  if (W('фгуп|гку|гбу|b2g').test(full))
+    return { pass: false, reason: 'gov-word' };
+  if (/(^|\D)(44|223)[\s-]?фз/i.test(full))
+    return { pass: false, reason: 'gov-law' };
+
+  // 11. КОМАНДИРОВКИ / ТОЛЬКО РФ
+  if (/командировк|выезд[а-яё]*\s+к\s+клиент|разъездн|только\s+москв/i.test(full))
+    return { pass: false, reason: 'travel' };
+  if (/удалённо\s+по\s+России|удаленно\s+по\s+России|резидентств[а-яё]*\s+РФ|только\s+для\s+граждан\s+РФ/i.test(full))
+    return { pass: false, reason: 'RU-only' };
+
+  // 12. СБЕР
+  if (/\bсбербанк|\bsberbank/i.test(full))
+    return { pass: false, reason: 'sber' };
+
+  return { pass: true };
+};
+```
+
 ### Step 6: Auto-applications
 
 **Limit per run: maximum 10 auto-applications per day** (hh.ru enforces a daily cap; exceeding it triggers captcha or account block). If more than 10 vacancies pass filters — apply to the top 10 by ranking score, add the rest to "interesting but not applied" section of the report.
