@@ -1,238 +1,133 @@
-# 🔍 Job Hunter — Claude Skill
+# Job Hunter Skill
 
-A universal job search automation skill for Claude.  
-Works for any profession, any country, any language.
-
----
-
-## What it does
-
-- **Daily reports** — artifact with all found vacancies and direct links
-- **Auto-applications** — submits applications where browser automation is possible
-- **Smart filtering** — by stack, geo, salary, work format
-- **Cover letters** — short (4–5 sentences), unique per vacancy, written in the vacancy's language
-- **Multi-platform search** — hh.ru, LinkedIn, Habr Career, Telegram channels, niche job boards; **+8 remote platforms**: CONTRA, Himalayas, Dynamite Jobs, We Work Remotely, DailyRemote, JustRemote, Remote OK, ARC
-- **Telegram channel discovery** — automatically finds active channels via tgstat.ru / telemetr.io
-- **Resume tracking** — detects changes on every run
-- **Security audit** — self-checks before working with personal data
-- **Open calls, grants & residencies** — finds artistic opportunities with deadline verification (6-month horizon)
-
----
-
-## Requirements
-
-| | |
-|---|---|
-| **Platform** | Claude.ai |
-| **Plan** | Pro or higher (Skills are not available on Free) |
-| **Browser** | Claude in Chrome extension — for auto-applications and search |
-
----
-
-## Installation
-
-1. Open **claude.ai → Settings → Skills**
-2. Click **Add skill**
-3. Copy the contents of [`SKILL.md`](./SKILL.md) and paste
-4. Save
-
----
-
-## First run
-
-Type in Claude:
-
-```
-Find me a job
-```
-
-The skill will run:
-- Security check
-- Language selection
-- One-time onboarding (~2 minutes)
-- Platform and Telegram channel setup
-
-If you already have a job search profile in Claude's memory — it will offer to import it instead of asking everything from scratch.
-
----
-
-## How to run daily search
-
-**Option 1 — manual** (works right away):
-
-```
-Run job search
-```
-
-The skill searches, filters, applies, and creates a report artifact with direct links.
-
-**Option 2 — scheduled** (via Claude Code):  
-Set up a scheduled task in Claude Code — the skill will run automatically every day without your involvement.
-
----
-
-## What happens on each run
-
-1. Checks resume for changes
-2. **Dynamically discovers platforms** via web search (never uses a fixed hardcoded list)
-3. Searches all platforms and Telegram channels
-4. Filters and ranks by your profile
-5. Asks for confirmation before applying (or applies automatically in scheduled mode)
-6. Submits applications with unique cover letters
-7. Creates a report artifact with direct links — **always created, even if 0 vacancies found**
-
-**Every phase is mandatory.** If a phase fails for technical reasons, the skill logs it in the report and continues automatically — it never stops mid-run to ask questions. This makes it safe to run as a scheduled task while you sleep.
-
----
-
-## Open calls, grants & residencies (Phase 6)
-
-A separate mode for creative practitioners — run independently from the job search.
-
-```
-Find open calls for artists
-```
-
-**Rules:**
-- **6-month horizon** — searches at least 6 months ahead from today's date
-- **No expired deadlines** — any opportunity with a deadline before today is excluded
-- **Link verification** — every link is checked: must resolve without error, lead to the current cycle's page (not a prior year's closed call), and point to the specific apply page (not a generic homepage)
-- Rolling / ongoing deadlines are included and labeled clearly
-- Results organized into: Grants · Residencies · Open Calls · Aggregators
-
----
-
-## Limitations
-
-- Auto-applications only work where browser UI is available
-- Vacancies with test tasks go to a separate list — no auto-apply
-- Telegram search requires an active session in web.telegram.org
-- The skill never stores passwords or asks for API keys
-- Open call link verification may fall back to secondary sources when direct fetch is blocked
-
----
-
-## Author
-
-[Mari](https://github.com/blackasp)
-
----
----
-
-# 🔍 Job Hunter — скилл для Claude
-
-Универсальный скилл для автоматизации поиска работы в Claude.  
-Работает для любой профессии, любой страны, любого языка.
+Автоматизированный поиск работы — один скилл вместо ежедневной ручной работы.
 
 ---
 
 ## Что делает
 
-- **Ежедневные отчёты** — артефакт со всеми найденными вакансиями и прямыми ссылками
-- **Авто-отклики** — подаёт заявки там, где возможно через браузер
-- **Умная фильтрация** — по стеку, гео, зарплате, формату работы
-- **Сопроводительные письма** — короткие (4–5 предложений), уникальные для каждой вакансии, на языке вакансии
-- **Поиск везде** — hh.ru, LinkedIn, Habr Career, Telegram-каналы, нишевые борды; **+8 remote-платформ**: CONTRA, Himalayas, Dynamite Jobs, We Work Remotely, DailyRemote, JustRemote, Remote OK, ARC
-- **Telegram-каналы** — автоматически находит живые каналы через tgstat.ru / telemetr.io
-- **Отслеживание резюме** — обнаруживает изменения при каждом запуске
-- **Безопасность** — самопроверка перед работой с личными данными
-- **Опен-коллы, гранты и резиденции** — поиск творческих возможностей с проверкой дедлайнов (горизонт 6 месяцев)
+Запускает полный цикл поиска работы: ищет вакансии на всех подключённых площадках, фильтрует по профилю, пишет кавер-леттеры под каждую вакансию и рассылает отклики. Возвращает один структурированный отчёт со ссылками.
 
 ---
 
-## Требования
+## Фазы
 
-| | |
+| Фаза | Что происходит | Когда |
+|------|----------------|-------|
+| **0 — Безопасность + язык** | Аудит скилла, выбор языка | Только первый запуск |
+| **1 — Онбординг** | Вопросы о профессии, зарплате, стеке, резюме | Только первый запуск |
+| **2 — Площадки** | Подбор и настройка платформ, поиск Telegram-каналов | После первого профиля |
+| **3 — Ежедневный запуск** | Поиск → фильтрация → отклики → отчёт | Каждый день |
+| **4 — Обновление резюме** | Загрузка нового PDF/ссылки, обновление профиля | По запросу |
+| **5 — Расширение источников** | Поиск новых каналов и площадок | Раз в неделю / по запросу |
+
+---
+
+## Платформы
+
+Подбираются динамически под профиль. Для российского IT по умолчанию:
+
+- **hh.ru** и региональные домены (hh.kz, hh.uz, hh.ge, hh.am, cy.hh.ru, rabota.by)
+- **Habr Career**, **getmatch.ru**, **geekjob.ru**
+- **LinkedIn** (международные роли)
+- **Telegram-каналы** — 5–15 живых каналов (последний пост ≤ 7 дней)
+
+---
+
+## Поиск на hh.ru
+
+Скилл использует NAME-синтаксис для поиска только по заголовку вакансии — исключает ложные срабатывания из описания:
+```
+https://hh.ru/search/vacancy?text=NAME%3A(системный+аналитик+OR+бизнес+аналитик)&work_format=REMOTE
+```
+
+Поле данных читается из `HH-Lux-InitialState` (страница), а не из REST API — поэтому используются специфичные маппинги:
+
+| Поле | InitialState | REST API (не используется) |
+|------|-------------|---------------------------|
+| ID вакансии | `v.vacancyId` | `v.id` |
+| Компания | `v.company?.name \|\| v.company?.visibleName` | `v.employer.name` |
+| Зарплата | `v.compensation` | `v.salary` |
+| Валюта | `c.currencyCode \|\| c.currency?.code \|\| 'RUR'` | — |
+| Дата | `v.publicationTime?.['@timestamp'] * 1000` | — |
+| Удалёнка | `v['@workSchedule'] === 'remote'` | `v.schedule.id` |
+
+---
+
+## Фильтрация
+
+- Исключения из профиля (стек, индустрия, уровень)
+- Гео и формат работы
+- Зарплата: **вакансии без зарплаты НЕ отклоняются** — только если указана и ниже порога
+- Дедупликация: та же компания + та же роль → пропустить; та же компания + другая роль → оставить
+- Уже виденные вакансии из истории
+
+---
+
+## Отклики
+
+- Лимит в день: задаётся при онбординге (`unlimited` или конкретное число)
+- Перед отправкой — подтверждение от пользователя
+- Считаются только **HTTP 200**; 403 = уже откликались; 429 = стоп
+- `{blocked: true}` = полная остановка, PushNotification
+- 800мс задержка между откликами
+- Задержка HEAD-проверка URL перед откликом (пропустить 404)
+
+---
+
+## Кавер-леттеры
+
+3 формата на выбор по типу роли:
+
+- **A — Problem-Solution** — по умолчанию для большинства ролей
+- **B — Achievement-First** — для технических / аналитических позиций
+- **C — Story Hook** — для креативных и лидерских ролей
+
+Правила: 80–120 слов, без шаблонных вступлений, без упоминания зарплаты, всё из резюме. Язык письма = язык вакансии.
+
+---
+
+## Отчёт
+
+Артефакт со структурой:
+
+```
+📊 Сводка: найдено / после фильтра / откликнулась / требуют действия / провалились
+✅ Автоотклики [N подтверждённых HTTP 200]
+⚡ Требуют вашего действия [тест, форма, капча]
+🔶 Интересные — проверьте сами
+📬 Приглашения на интервью (все активные, без фильтра по дате)
+⚠️ Технические замечания
+```
+
+Каждая вакансия — отдельная строка с полным `https://` URL.
+
+---
+
+## Что хранится в памяти
+
+Файл `/areas/job-hunter-profile.md`:
+
+- Язык, профиль, резюме (хеш + извлечённый стек)
+- Список платформ с доменами для разрешений
+- Список Telegram-каналов с датой последнего поста
+- История откликов (ID, компания, роль, дата, статус)
+- `last_run_date`, `auto_apply_limit`
+
+---
+
+## Рекомендуемые модели
+
+| | Модель |
 |---|---|
-| **Платформа** | Claude.ai |
-| **План** | Pro или выше (на Free скиллы недоступны) |
-| **Браузер** | Claude in Chrome (расширение) — для авто-откликов и поиска |
+| **Минимум** | Claude Haiku 5.5 |
+| **Оптимум** | **Claude Sonnet 5.5** ← рекомендуется для ежедневных запусков |
+| **Максимум** | Claude Opus 5.5 / Fable 5.1 |
 
 ---
 
-## Установка
+## Как запустить
 
-1. Открой **claude.ai → Settings → Skills**
-2. Нажми **Add skill**
-3. Скопируй содержимое файла [`SKILL.md`](./SKILL.md) и вставь
-4. Сохрани
+Просто напишите одну из фраз — скилл активируется автоматически:
 
----
-
-## Первый запуск
-
-Напиши в Claude:
-
-```
-Найди мне работу
-```
-
-Скилл сам проведёт:
-- Проверку безопасности
-- Выбор языка
-- Онбординг (один раз, ~2 минуты)
-- Настройку платформ и Telegram-каналов
-
-Если у тебя уже есть профиль поиска в памяти Claude — скилл предложит импортировать его вместо повторного онбординга.
-
----
-
-## Как запускать поиск
-
-**Вариант 1 — вручную** (работает сразу):
-
-```
-Запусти поиск работы
-```
-
-Скилл ищет вакансии, фильтрует, отправляет отклики и создаёт отчёт-артефакт.
-
-**Вариант 2 — по расписанию** (через Claude Code):  
-Настрой scheduled task в Claude Code — скилл будет запускаться автоматически каждый день без твоего участия.
-
----
-
-## Что происходит при каждом запуске
-
-1. Проверяет резюме на изменения
-2. **Динамически находит платформы** через веб-поиск (никакого жёстко заданного списка)
-3. Ищет вакансии на всех платформах и в Telegram-каналах
-4. Фильтрует и ранжирует по твоему профилю
-5. Спрашивает подтверждение перед откликами (или откликается автоматически при запуске по расписанию)
-6. Отправляет отклики с уникальными письмами
-7. Создаёт отчёт-артефакт — **всегда, даже если 0 вакансий найдено**
-
-**Каждая фаза обязательна.** Если фаза не выполнилась по технической причине — скилл записывает это в отчёт и идёт дальше автоматически. Никаких остановок и вопросов посреди запуска — можно ставить на ночное расписание.
-
----
-
-## Опен-коллы, гранты и резиденции (Фаза 6)
-
-Отдельный режим для творческих практиков — запускается независимо от поиска работы.
-
-```
-Найди опен-коллы для художников
-```
-
-**Правила:**
-- **Горизонт 6 месяцев** — поиск не менее чем на 6 месяцев вперёд от текущей даты
-- **Без просроченных дедлайнов** — любая возможность с дедлайном раньше сегодняшнего дня исключается
-- **Проверка ссылок** — каждая ссылка проверяется: должна открываться без ошибки, вести на страницу текущего цикла (не прошлогоднего закрытого конкурса) и указывать на конкретную страницу подачи (не общую главную)
-- Rolling / ongoing дедлайны включаются и помечаются отдельно
-- Результаты сгруппированы по: Гранты · Резиденции · Опен-коллы · Агрегаторы
-
----
-
-## Ограничения
-
-- Авто-отклики работают только там, где есть браузерный интерфейс
-- Вакансии с тестовым заданием — в отдельный список, без авто-отклика
-- Telegram-поиск требует активной сессии в web.telegram.org
-- Скилл не хранит пароли и не запрашивает API-ключи
-- Проверка ссылок для опен-коллов может использовать вторичные источники, если прямой доступ заблокирован
-
----
-
-## Автор
-
-[Mari](https://github.com/blackasp)
+> «найди мне работу» · «запусти поиск» · «обнови резюме» · «покажи отчёт» · «добавь новые каналы»
