@@ -1,7 +1,6 @@
 ---
-name: job-hunter
-description: >
-  Universal job search automation skill. Triggers when the user wants to find a job, set up automated job search, get daily job reports, apply to vacancies automatically, or update their resume for search purposes. Use this skill for ANY job-hunting task: initial setup, daily search runs, resume updates, platform onboarding, Telegram channel discovery, or reviewing and applying to found vacancies. Activate immediately when the user says anything like "find me a job", "set up job search", "I'm looking for work", "run today's search", "update my resume", or "which jobs match my profile".
+name: "job-hunter"
+description: "Universal job search automation skill. Triggers when the user wants to find a job, set up automated job search, get daily job reports, apply to vacancies automatically, or update their resume for search purposes. Use this skill for ANY job-hunting task: initial setup, daily search runs, resume updates, platform onboarding, Telegram channel discovery, or reviewing and applying to found vacancies. Activate immediately when the user says anything like \"find me a job\", \"set up job search\", \"I'm looking for work\", \"run today's search\", \"update my resume\", or \"which jobs match my profile\"."
 ---
 
 # Job Hunter
@@ -143,6 +142,34 @@ For each platform in priority order:
 
 **If browser hits a login page** — do NOT abort the run. Mark platform as "needs re-auth", continue with others, note in report.
 
+**hh.ru-specific checks (apply when searching hh.ru):**
+
+**Data structure:** hh.ru page state (`HH-Lux-InitialState`) uses different field names than the REST API. Always handle both:
+- Vacancy ID: use `v.vacancyId` (InitialState), not `v.id`
+- Company name: `v.company?.name || v.company?.visibleName` (not `v.employer.name`)
+- Salary object: `v.compensation` (not `v.salary`)
+- Currency code: `c.currencyCode || c.currency?.code || c.currency || 'RUR'`
+- Salary mode (frequency): `typeof c.mode === 'object' ? c.mode.$ : (c.mode || 'MONTH')`
+- Publication date: `new Date(v.publicationTime?.$ || v.publicationTime?.['@timestamp'] * 1000)` — note: `@timestamp` is in seconds, not ms
+- Work schedule (remote check): `v['@workSchedule'] === 'remote'` (not `v.schedule.id`)
+
+**Search query:** Use NAME-syntax for title-only search to avoid false positives from job descriptions:
+`https://hh.ru/search/vacancy?text=NAME%3A(системный+аналитик+OR+бизнес+аналитик)&work_format=REMOTE`
+
+**Salary check:** Only reject a vacancy for low salary if compensation is explicitly stated AND has a numeric value. Vacancies with no salary (`!c || (!c.from && !c.to)` or `c.noCompensation`) must NOT be rejected — pass them through. For currency conversion, support USD and EUR directly:
+`const usd = curr === 'USD' ? val : curr === 'EUR' ? val * 1.05 : val / (RATES[curr] || 90);`
+where `RATES = {RUR:90, RUB:90, KZT:500, BYN:3.2, BYR:3.2, UZS:12800}`
+
+**Previously applied check:** Before starting the run, load the user's existing applications from `https://hh.ru/applicant/negotiations?filter=all`. Parse the response from DOM (not JSON), check the `data-initial-state` attribute:
+```
+const el = document.createElement('div'); el.innerHTML = text;
+const data = el.querySelector('[data-initial-state]');
+const parsed = JSON.parse(data.getAttribute('data-initial-state'));
+```
+Inspect the actual key names (they may differ from the documented API). If this fails, log a warning but do NOT abort the run.
+
+**User name:** Always read the user's first name from the API before the run: `fetch('https://api.hh.ru/me')` → use `me.first_name`. Never invent or guess the name.
+
 ### Step 3: Telegram channel search
 
 Open web.telegram.org. Open each channel. Review posts from the last 24h (or since last run). Extract job links. If channels mention other active channels — add to check list.
@@ -163,7 +190,7 @@ Capture direct vacancy links, not just company pages.
 For each vacancy:
 1. **Exclusion filters** (from profile): remove by stack, industry, level
 2. **Geo check**: remove if not remote or wrong region
-3. **Salary**: remove if below threshold (when listed)
+3. **Salary**: remove if below threshold (when listed); vacancies with no salary listed — keep
 4. **Freshness**: remove if older than profile limit
 5. **Deduplication**: remove if same company + role already in history
 
@@ -175,7 +202,7 @@ After filtering — rank by relevance:
 
 ### Step 6: Auto-applications
 
-**Limit per run: maximum 10 auto-applications.** If more than 10 vacancies pass filters — apply to the top 10 by ranking score, add the rest to "interesting but not applied" section of the report.
+**Limit per run: maximum 10 auto-applications per day** (hh.ru enforces a daily cap; exceeding it triggers captcha or account block). If more than 10 vacancies pass filters — apply to the top 10 by ranking score, add the rest to "interesting but not applied" section of the report.
 
 **Before sending any applications** — show the user a brief list: "Found N vacancies to apply to. Top 10 will be submitted automatically. Continue?" Wait for confirmation. This prevents accidental mass-applying.
 
@@ -183,10 +210,17 @@ For each vacancy in the confirmed top-10:
 
 **If platform supports browser-based application:**
 1. Open the vacancy
-2. Find the apply button
-3. Write a cover letter using the Cover Letter Framework below
-4. Submit
-5. Record in application history
+2. Verify URL contains vacancy ID (`/vacancy/\d+`) — if not, construct it: `https://hh.ru/vacancy/${vacancyId}`
+3. Check vacancy is still live: if HEAD request returns 404, skip it and note in report
+4. Find the apply button
+5. Write a cover letter using the Cover Letter Framework below
+6. Submit — wait for HTTP 200 response before counting as applied
+7. Add a delay of 800ms minimum between applications to avoid rate limiting
+8. Record in application history with `{title, company, url, status: 200}`
+
+**Application counting:** Only count vacancies where the submit returned HTTP 200. Status 403 (already applied) goes to "already applied" list. Status 429 (rate limit) → stop the loop immediately. Any other error → "failed" list. Never increment the counter for failed or blocked requests.
+
+**Captcha detection:** If the apply function returns `{blocked: true}` — stop the entire application loop immediately. Log the captcha hit and add remaining vacancies to "action required" in the report.
 
 **If vacancy requires a test task** — do NOT auto-apply. Add to separate list in report.
 
@@ -237,15 +271,17 @@ Create an artifact — daily report. Write in the user's chosen language.
 ## 📊 Summary
 - Vacancies found: N
 - After filtering: N
-- Auto-applied: N
+- Auto-applied (confirmed HTTP 200): N
+- Already applied earlier: N
 - Require your action: N
+- Failed / skipped: N
 
 ---
 
-## ✅ Auto-applications [N]
-[For each:]
+## ✅ Auto-applications [N confirmed]
+[For each — one per line:]
 **[Role] — [Company]**
-📎 [direct link]
+📎 https://hh.ru/vacancy/[ID]  ← full working URL, never platform name alone
 💼 Platform: ...
 📝 Letter preview: "[first 15 words of cover letter]..."
 📅 Published: [date]
@@ -253,22 +289,28 @@ Create an artifact — daily report. Write in the user's chosen language.
 ---
 
 ## ⚡ Require your action [N]
-[For each:]
+[For each — one per line:]
 **[Role] — [Company]**
-📎 [direct link]
-❓ Reason: test task / email application / registration required
+📎 [direct link — always a full https:// URL]
+❓ Reason: test task / email application / registration required / captcha stopped run / direct link unavailable — open manually
 📅 Published: [date]
 
 ---
 
 ## 🔶 Interesting — check yourself [N]
 (Vacancies near filter thresholds or above the 10-application limit)
-[For each: direct link, role, company, why flagged]
+[For each: full direct link, role, company, why flagged]
+
+---
+
+## 📬 Invitations to interview (all active)
+[Fetched from https://hh.ru/applicant/negotiations?filter=all — ALL invitations, not filtered by date]
+[For each: role, company, date received, link]
 
 ---
 
 ## ⚠️ Technical notes
-(Re-auth needed, dead channels, platforms skipped, etc.)
+(Re-auth needed, dead channels, platforms skipped, captcha hit, connection lost, etc.)
 ```
 
 After creating the report: update `last_run_date` to today in `/areas/job-hunter-profile.md`.
@@ -321,12 +363,24 @@ File `/areas/job-hunter-profile.md`:
 
 **Cover letters — short and specific.** 80–120 words. Specific to this vacancy. Every claim verifiable against resume. Format chosen per role type. Never mention salary.
 
-**Report — artifact only.** Not in chat. Direct links to every vacancy in every section.
+**Report — artifact only.** Not in chat. Direct links to every vacancy in every section. Each vacancy on its own line — never comma-separated. URL must be a full `https://` address, never a platform name.
 
 **Resume — live.** Check hash on every run. If changed → re-read and apply.
 
 **Language — consistent.** Set once in Phase 0. Used everywhere: messages, onboarding, reports, cover letters, error notes.
 
-**Auto-apply limit.** Max 10 per run. Confirm before sending.
+**Auto-apply limit.** Max 10 per run. Confirm before sending. Count ONLY confirmed HTTP 200 responses — never count 403, 429, or errors.
 
 **Cold start detection.** If last run > 14 days ago → verify auth and channel activity before searching.
+
+**Captcha = full stop.** If captcha is detected during the application loop → stop immediately, move remaining vacancies to "action required", send PushNotification to the user.
+
+**Network errors.** Wrap every fetch in try/catch. On error: increment failed counter, wait 1 second, continue to next vacancy. Never let a single network error abort the whole run.
+
+**Browser state.** Before starting the application loop, verify that in-browser state variables (applied list, vacancy pool, resume hash) exist. If lost (e.g. bridge reconnect), re-collect from scratch before proceeding.
+
+**Always notify on failure.** If the run is interrupted for any reason (captcha, connection loss, unhandled error) — send PushNotification so the user knows the task did not complete.
+
+**User name.** Always fetch from `https://api.hh.ru/me` → `first_name`. Never invent or guess it.
+
+**Invitations.** Show ALL active invitations (from `negotiations?filter=all`) without filtering by date.
