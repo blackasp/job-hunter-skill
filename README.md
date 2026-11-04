@@ -105,20 +105,74 @@ Set up a scheduled task in Claude Code — the skill will run automatically ever
 
 ---
 
-## Open calls, grants & residencies (Phase 6)
+## For artists — Phase 6 (independent from job search)
 
-A separate mode for creative practitioners — run independently from the job search.
+A separate mode for creative practitioners. Runs independently — has its own profile, its own report, never mixes with the job search.
 
+On first run the skill asks once: your medium, career stage, geography, what to find, deadline horizon. Saves it. Never asks again.
+
+---
+
+### What you can ask for
+
+**Open calls & competitions:**
 ```
-Find open calls for artists
+Find open calls for digital art
+Find open calls for AI art with deadline in the next 3 months
+Find competitions for light installations
+Find open calls on e-flux
 ```
 
-**Rules:**
-- **6-month horizon** — searches at least 6 months ahead from today's date
-- **No expired deadlines** — any opportunity with a deadline before today is excluded
-- **Link verification** — every link is checked: must resolve without error, lead to the current cycle's page (not a prior year's closed call), and point to the specific apply page (not a generic homepage)
-- Rolling / ongoing deadlines are included and labeled clearly
-- Results organized into: Grants · Residencies · Open Calls · Aggregators
+**Residencies:**
+```
+Find residencies for new media artists
+Find residencies in Europe for digital art
+Find residencies with stipend for emerging artists
+```
+
+**Art fairs:**
+```
+Find art fairs I can apply to as an artist
+Find fairs for digital / AI art
+Find fairs with open applications in 2025
+Which art fairs accept artists directly (not only galleries)?
+```
+
+**Galleries:**
+```
+Find galleries that show digital art and accept submissions
+Find galleries for AI art in Berlin
+Find galleries specializing in light and sound installations
+Find galleries open to unsolicited proposals
+```
+
+**Combined:**
+```
+Find all opportunities for my work — open calls, residencies, fairs, galleries
+Find everything for digital media artists in the next 6 months
+Update my creative profile (medium / geography / what to find)
+```
+
+---
+
+### What the report contains
+
+Each result gets its own block with:
+- Direct link to the **application page** (never the homepage)
+- Deadline (or "rolling" if ongoing)
+- Fee, stipend, accommodation — if mentioned
+- One-sentence note on fit with your medium
+- Whether fairs accept artists directly or only through galleries
+
+Expired links and past-year calls are removed automatically. If a link can't be verified, it's noted in the report rather than silently included.
+
+---
+
+### Rules
+- **1-year horizon** by default — only future deadlines (configurable: 3 months / 6 months / 1 year / custom — set during onboarding or changed anytime: "change deadline horizon")
+- **Medium matching** — a painting gallery won't appear in results for AI/digital art
+- **Link verification** — every link checked: must open, lead to the current cycle, point to the apply page
+- Rolling / ongoing deadlines included and labeled clearly
 
 ---
 
@@ -246,20 +300,74 @@ Find open calls for artists
 
 ---
 
-## Опен-коллы, гранты и резиденции (Фаза 6)
+## Для художников — Фаза 6 (независимо от поиска работы)
 
-Отдельный режим для творческих практиков — запускается независимо от поиска работы.
+Отдельный режим для творческих практиков. Запускается независимо — свой профиль, свой отчёт, никогда не смешивается с поиском работы.
 
+При первом запуске скилл спрашивает один раз: медиум, стадия карьеры, география, что искать, горизонт дедлайнов. Сохраняет. Больше не спрашивает.
+
+---
+
+### Что можно попросить
+
+**Опен-коллы и конкурсы:**
 ```
-Найди опен-коллы для художников
+Найди опен-коллы для диджитал-арта
+Найди опен-коллы для AI art с дедлайном в ближайшие 3 месяца
+Найди конкурсы для световых инсталляций
+Найди опен-коллы на e-flux
 ```
 
-**Правила:**
-- **Горизонт 6 месяцев** — поиск не менее чем на 6 месяцев вперёд от текущей даты
-- **Без просроченных дедлайнов** — любая возможность с дедлайном раньше сегодняшнего дня исключается
-- **Проверка ссылок** — каждая ссылка проверяется: должна открываться без ошибки, вести на страницу текущего цикла (не прошлогоднего закрытого конкурса) и указывать на конкретную страницу подачи (не общую главную)
+**Резиденции:**
+```
+Найди резиденции для new media художников
+Найди резиденции в Европе для диджитал-арта
+Найди резиденции со стипендией для emerging artists
+```
+
+**Ярмарки:**
+```
+Найди арт-ярмарки, куда я могу подать заявку как художник
+Найди ярмарки для диджитал / AI art
+Найди ярмарки с открытыми заявками в 2025 году
+Какие арт-ярмарки принимают художников напрямую, без галереи?
+```
+
+**Галереи:**
+```
+Найди галереи, которые показывают диджитал-арт и принимают заявки
+Найди галереи для AI art в Берлине
+Найди галереи, специализирующиеся на световых и звуковых инсталляциях
+Найди галереи, открытые для unsolicited proposals
+```
+
+**Всё сразу:**
+```
+Найди все возможности для моих работ — опен-коллы, резиденции, ярмарки, галереи
+Найди всё для digital media художников на ближайшие 6 месяцев
+Обнови мой творческий профиль (медиум / география / что искать)
+```
+
+---
+
+### Что содержит отчёт
+
+Каждый результат — отдельный блок с:
+- Прямой ссылкой на **страницу подачи** (никогда — на главную сайта)
+- Дедлайном (или «rolling», если постоянный)
+- Стоимостью участия, стипендией, жильём — если указано
+- Одним предложением о соответствии твоему медиуму
+- Пометкой, принимает ли ярмарка художников напрямую или только через галерею
+
+Просроченные ссылки и прошлогодние коллы удаляются автоматически. Если ссылка не верифицируется — она отмечается в отчёте, а не включается молча.
+
+---
+
+### Правила
+- **Горизонт 1 год** по умолчанию — только будущие дедлайны (настраивается: 3 месяца / 6 месяцев / 1 год / произвольно — задаётся при опросе или меняется в любой момент: «поменяй горизонт дедлайнов»)
+- **Соответствие медиуму** — галерея для живописи не появится в результатах для AI/digital art
+- **Проверка ссылок** — каждая ссылка проверяется: должна открываться, вести на текущий цикл, указывать на страницу подачи
 - Rolling / ongoing дедлайны включаются и помечаются отдельно
-- Результаты сгруппированы по: Гранты · Резиденции · Опен-коллы · Агрегаторы
 
 ---
 
