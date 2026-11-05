@@ -5,6 +5,10 @@ Works for any profession, any country, any language.
 
 ---
 
+> **Stay updated:** Click **Watch → Releases only** at the top of this page to get notified when a new version comes out.
+
+---
+
 ## What it does
 
 - **Daily reports** — artifact with all found vacancies and direct links
@@ -186,6 +190,12 @@ Expired links and past-year calls are removed automatically. If a link can't be 
 
 ---
 
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for the full history of changes.
+
+---
+
 ## Author
 
 [Mari](https://github.com/blackasp)
@@ -197,6 +207,10 @@ Expired links and past-year calls are removed automatically. If a link can't be 
 
 Универсальный скилл для автоматизации поиска работы в Claude.  
 Работает для любой профессии, любой страны, любого языка.
+
+---
+
+> **Следи за обновлениями:** Нажми **Watch → Releases only** в правом верхнем углу страницы, чтобы получать уведомления о новых версиях.
 
 ---
 
@@ -378,6 +392,12 @@ Expired links and past-year calls are removed automatically. If a link can't be 
 - Telegram-поиск требует активной сессии в web.telegram.org
 - Скилл не хранит пароли и не запрашивает API-ключи
 - Проверка ссылок для опен-коллов может использовать вторичные источники, если прямой доступ заблокирован
+
+---
+
+## Список изменений
+
+См. [CHANGELOG.md](./CHANGELOG.md) для полной истории обновлений.
 
 ---
 
