@@ -202,11 +202,11 @@ After filtering — rank by relevance:
 
 #### ⚠️ Critical: two-pass filter — all blockers must check the full text
 
-**Bug confirmed November 2026:** An early `filterFull` implementation only checked several blocker groups (1С, DWH, незнакомое ПО) against the vacancy *title*. Vacancies containing these keywords **only in the description** passed the filter and received auto-applications.
+**Confirmed bug (November 2026):** Applying to a vacancy that explicitly mentioned 1С in the description (but not in the title). Root cause: the title-only filter correctly blocked vacancies with 1С in the title, but the full-text filter (`filterFull`) was missing the 1С check for the description. The vacancy passed both passes and triggered an application.
 
-**Root cause:** The variable `full = titleOnly + ' ' + desc` was defined but not consistently used. Checks for 1С, billing, DWH, and unknown software ran against `titleOnly` only, so a vacancy with "1С" exclusively in the description was not caught.
+**Rule:** Every exclusion filter from the user profile must be applied to the **combined full text** (title + description), not to the title alone. The title-only pass is only an optimisation to skip vacancies that obviously don't match the target role; it is not a substitute for checking the description.
 
-**Fix:** Every blocker — except role matching, junior/intern detection, and the word-boundary BI title check (all title-only by design) — must run against `full`. Embed this canonical `filterFull` at the start of every run:
+**Two-pass pattern for hh.ru:**
 
 ```js
 window.W = s => new RegExp('(^|[^а-яёa-z0-9])(?:' + s + ')([^а-яёa-z0-9]|$)', 'i');
@@ -220,84 +220,68 @@ window.filterFull = (name, desc, vac) => {
   const titleOnly = (name || '').replace(/\s+/g, ' ').trim();
   const full = (titleOnly + ' ' + (desc || '')).replace(/\s+/g, ' ');
 
-  // 1. РОЛЬ — только заголовок
+  // Pass 1 — title only (role match + junior/intern check)
   if (!/системный аналитик|system analyst|business analyst|technical business analyst|solutions analyst|integration analyst/i.test(titleOnly))
     return { pass: false, reason: 'not-SA-BA' };
-
-  // 2. СТАЖИРОВКИ / ДЖУНЫ — только заголовок
-  // Bug 1 fix: added ученик|стажёром to Russian intern regex; added apprentice to W()-pattern
+  // Bug 1 fix: added стажёром|ученик to Russian intern regex; added apprentice to W()-pattern
   if (/стажировк|стажер|стажёр|стажёром|ученик|ищем\s+стаж/i.test(titleOnly))
     return { pass: false, reason: 'intern' };
   if (W('junior|intern|trainee|apprentice').test(titleOnly))
     return { pass: false, reason: 'junior' };
   if (/младший\s+аналитик/i.test(titleOnly))
     return { pass: false, reason: 'junior' };
-
-  // 3. BI / ДАТА-АНАЛИТИКА — заголовок + описание
-  if (/аналитик[а-яё]*\s+данных|data\s+analyst|data\s+scientist|data\s+engineer|power\s*bi|qlik|visiology|дашборд/i.test(full))
-    return { pass: false, reason: 'data-bi' };
   if (W('bi').test(titleOnly))
     return { pass: false, reason: 'BI-title' };
 
-  // 4. 1С / DWH / БИЛЛИНГ — заголовок + описание
+  // Pass 2 — full text (title + description): ALL other blockers
+  if (/аналитик[а-яё]*\s+данных|data\s+analyst|data\s+scientist|data\s+engineer|power\s*bi|qlik|visiology|дашборд/i.test(full))
+    return { pass: false, reason: 'data-bi' };
   if (/1[\s]?[сc](?![а-яёa-z])/i.test(full))
     return { pass: false, reason: '1C' };
   if (/биллинг|billing/i.test(full))
     return { pass: false, reason: 'billing' };
   if (/\bdwh\b|data[\s-]?lake|data[\s-]?warehouse|greenplum/i.test(full))
     return { pass: false, reason: 'DWH' };
-
-  // 5. НЕЗНАКОМОЕ ПО — заголовок + описание
   if (/camunda|elma\b|bpmsoft|creatio\b|битрикс\s*24|directum[\s-]?rx|ms[\s-]dynamics|microsoft[\s-]dynamics|navision|siebel|\bsap\b/i.test(full))
     return { pass: false, reason: 'unknown-soft' };
   if (/diasoft|диасофт|colvir|автоматизированн[а-яё]*\s+банковск/i.test(full))
     return { pass: false, reason: 'banking-soft' };
-
-  // 6. БАНКОВСКИЕ КОРОБКИ — заголовок + описание
   if (W('абс|abs|цфт|ибсо').test(full))
     return { pass: false, reason: 'banking-box' };
-
-  // 7. ИБ / СЕТИ / ИНФРАСТРУКТУРА — заголовок + описание
   if (/информационн[а-яё]*\s+безопасн|кибербезопасн|cyber[\s-]?security|appsec|devsecops|пентест|уязвимост|антивирус|\bngfw\b|\bфстэк\b|криптограф/i.test(full))
     return { pass: false, reason: 'infosec' };
   if (/сетев[а-яё]*\s+(технолог|оборудован|инфраструктур|протокол)|wi-?fi|маршрутизатор|коммутатор|систем[а-яё]*\s+хранения\s+данных|серверн[а-яё]*\s+(оборудован|инфраструктур)|виртуализац|гипервизор|дата-?центр|прошивк|firmware|асу\s*тп|scada|телеметри[а-яё]*/i.test(full))
     return { pass: false, reason: 'network-infra' };
   if (W('иб|soc|siem|dlp|sdn|схд|цод').test(full))
     return { pass: false, reason: 'infosec-word' };
-
-  // 8. БЛОКЧЕЙН
   if (/блокчейн|blockchain|web\s?3|смарт[\s-]?контракт|smart\s+contract|ethereum|solidity|hyperledger|криптовалют|криптоактив|криптобирж|токенизац/i.test(full))
     return { pass: false, reason: 'blockchain' };
   if (W('dlt|nft|цфа').test(full))
     return { pass: false, reason: 'blockchain-word' };
-
-  // 9. ГОСТ / НМД
   if (W('гост|гостов|еспд').test(full))
     return { pass: false, reason: 'gost' };
   if (/РД\s?50-34/i.test(full))
     return { pass: false, reason: 'gost-rd' };
-
-  // 10. ГОССЕКТОР
   if (/госсектор|гос[а-яё]*\s*орган|государственн[а-яё]*\s+(заказчик|учрежден|структур|организац)|правительств|министерств|ведомств|муниципальн|госуслуг|госзакуп|public\s+sector|e-?government/i.test(full))
     return { pass: false, reason: 'gov' };
   if (W('фгуп|гку|гбу|b2g').test(full))
     return { pass: false, reason: 'gov-word' };
   if (/(^|\D)(44|223)[\s-]?фз/i.test(full))
     return { pass: false, reason: 'gov-law' };
-
-  // 11. КОМАНДИРОВКИ / ТОЛЬКО РФ
   if (/командировк|выезд[а-яё]*\s+к\s+клиент|разъездн|только\s+москв/i.test(full))
     return { pass: false, reason: 'travel' };
   if (/удалённо\s+по\s+России|удаленно\s+по\s+России|резидентств[а-яё]*\s+РФ|только\s+для\s+граждан\s+РФ/i.test(full))
     return { pass: false, reason: 'RU-only' };
-
-  // 12. СБЕР
   if (/\bсбербанк|\bsberbank/i.test(full))
     return { pass: false, reason: 'sber' };
 
   return { pass: true };
 };
 ```
+
+**Initialise `filterFull` once** at the top of each browser session, before the apply loop. The same function covers both hh.ru and all other platforms — just pass the vacancy title, description text, and vacancy object as arguments.
+
+**False positives — do NOT block** (confirmed safe): "нефункциональные требования (ИБ, нагрузка)"; "понимание основ ИБ" in the "желательно" section; "консультирование junior-аналитиков"; "дашборды" listed as one of many tasks; "государственные структуры" in a client-list context; "командировки" appearing in a product name; "тестовое задание".
 
 ### Step 6: Auto-applications
 
@@ -310,18 +294,13 @@ window.filterFull = (name, desc, vac) => {
 ```js
 // Bug 4 fix: initialize before the apply loop
 window.__testAssignments = [];
-// window.__confirmedApplied is also initialized here if not already set
 window.__confirmedApplied = window.__confirmedApplied || [];
 ```
 
-For each vacancy in the confirmed top-10:
-
 **Bug 4 fix — test assignment detection (check BEFORE attempting to apply):**
 ```js
-// Check if vacancy requires a test assignment
 const hasTest = vacancy.has_test === true ||
   /тестовое задание|test\s*task/i.test(vacancy.description || '');
-
 if (hasTest) {
   window.__testAssignments.push({
     id: vacancy.id || vacancy.vacancyId,
@@ -330,24 +309,21 @@ if (hasTest) {
     company: vacancy.company?.name || vacancy.company?.visibleName || vacancy.employer?.name,
     url: vacancy.url || `https://hh.ru/vacancy/${vacancy.id || vacancy.vacancyId}`
   });
-  // Skip __apply() — do not auto-apply to vacancies requiring test tasks
-  continue;
+  continue; // Skip __apply() — do not auto-apply
 }
 ```
 
 **Bug 2 fix — salary check is MANDATORY before every __apply(), including resumed loops:**
 
-> **CRITICAL RULE:** `__checkSalaryPage(vacancyId, host)` MUST be called before every single `__apply()` call — including when the apply loop is resumed via `window.__resumeIdx`. Never rely on salary data cached in `window.__newCandidates` or any other pre-collected data structure for the salary check. Always fetch fresh from the vacancy page.
+> **CRITICAL RULE:** `__checkSalaryPage(vacancyId, host)` MUST be called before every single `__apply()` — including when the loop is resumed via `window.__resumeIdx`. Never rely on salary data from `window.__newCandidates` or any pre-collected cache for the salary check. Always fetch fresh from the vacancy page.
 
 ```js
-// If loop is resumed (window.__resumeIdx is set), start from that index
-// but ALWAYS call __checkSalaryPage for each vacancy regardless
 const startIdx = window.__resumeIdx || 0;
 for (let i = startIdx; i < vacancies.length; i++) {
   const vac = vacancies[i];
   const vacancyId = vac.id || vac.vacancyId;
 
-  // Check test assignment first (Bug 4 fix)
+  // Bug 4: test assignment check
   const hasTest = vac.has_test === true ||
     /тестовое задание|test\s*task/i.test(vac.description || '');
   if (hasTest) {
@@ -358,25 +334,21 @@ for (let i = startIdx; i < vacancies.length; i++) {
     continue;
   }
 
-  // Bug 2 fix: salary check is mandatory here — NEVER skip, NEVER use __newCandidates
+  // Bug 2: salary check mandatory — NEVER skip, NEVER use __newCandidates
   const salaryOk = await __checkSalaryPage(vacancyId, vac.host || 'hh.ru');
   if (!salaryOk) continue;
 
   const result = await __apply(vacancyId, vac.host || 'hh.ru');
 
   if (result.status === 200) {
-    // Bug 3 fix: push full object so report can iterate with links
+    // Bug 3: push full object so report can iterate with links
     window.__confirmedApplied.push({
       id: vacancyId,
       title: vac.title || vac.name,
       company: vac.company?.name || vac.company?.visibleName || vac.employer?.name,
       url: vac.url || `https://hh.ru/vacancy/${vacancyId}`
     });
-  } else if (result.status === 429) {
-    // Rate limit — stop immediately
-    break;
-  }
-  // Save progress index so the loop can resume if interrupted
+  } else if (result.status === 429) { break; }
   window.__resumeIdx = i + 1;
 }
 ```
@@ -395,40 +367,55 @@ for (let i = startIdx; i < vacancies.length; i++) {
 
 **Captcha detection:** If the apply function returns `{blocked: true}` — stop the entire application loop immediately. Log the captcha hit and add remaining vacancies to "action required" in the report.
 
+**If vacancy requires a test task** — do NOT auto-apply. Add to `window.__testAssignments` and report separately (see Bug 4 fix above).
+
+**If application requires email / form** — add to "action required" list in report.
+
 ### Cover Letter Framework
 
-Cover letters must be **short** (3–5 sentences, 80–120 words maximum). Hiring managers don't read long letters. Each letter is unique and specific to this vacancy — never a template.
+**Bug 5 fix — mandatory 5-part structure (November 2026):**
 
-**Choose the format based on role type:**
+> **Root cause:** Previous format instructions did not enforce a greeting, self-presentation, or explicit vacancy comparison. The resulting letters started mid-sentence ("Меня привлекает эта позиция в :"), omitted the greeting and self-intro, and failed to explicitly compare the candidate's experience against the vacancy requirements.
 
-**Format A — Problem-Solution** (default for most roles):
-> Sentence 1: Name a specific challenge the company likely faces (based on vacancy text or company context).
-> Sentence 2: State how your experience directly addresses that challenge — one concrete example with a result.
-> Sentence 3: Connect your specific skills from resume to their specific needs in this vacancy.
-> Sentence 4: Brief call to action — availability for a call.
+Each cover letter **must** consist of exactly 5 parts in this order. Skipping any part is not allowed.
 
-**Format B — Achievement-First** (for technical / results-driven roles, e.g. developer, analyst, QA):
-> Sentence 1: Lead with your single most relevant qualification or achievement for this role.
-> Sentence 2: Connect it to the vacancy's key requirement with a specific number or outcome.
-> Sentence 3: One sentence on why this company / product is interesting to you — specific, not generic.
-> Sentence 4: Call to action.
+**Part 1 — Greeting**
+Address the team or company by name. If the vacancy mentions a hiring manager's name — use it.
+Example: *"Добрый день, команда [Company]!"* / *"Hello, [Company] team!"*
 
-**Format C — Story Hook** (for creative, leadership, or mission-driven roles):
-> Sentence 1: A brief moment or turning point that connects your path to this role — vivid, not clichéd.
-> Sentence 2: How that experience shaped a skill or approach that matches this vacancy's needs.
-> Sentence 3: Why this specific company is the right next chapter.
-> Sentence 4: Call to action.
+**Part 2 — Self-presentation** (1 sentence)
+One sentence stating the candidate's specific specialization relevant to this vacancy. Must NOT be generic — must name the specific role or domain.
+Example: *"Я — системный аналитик с 6+ летним опытом интеграций и API в B2B SaaS."*
 
-**Rules that apply to all formats:**
-- Every sentence must be verifiable against the resume — no invented achievements
+**Part 3 — Relevant experience** (2–3 sentences)
+Only experience that matches THIS vacancy's requirements. Pick 2–3 concrete achievements or skills from the resume that overlap with the vacancy. Do NOT copy-paste from resume wholesale.
+Example: *"В Handysay я выстраивала аналитику с нуля — от ТЗ на интеграции до A/B-тестов на 50k пользователей."*
+
+**Part 4 — Vacancy comparison** (2–3 sentences)
+Explicit point-by-point mapping to the vacancy requirements. Reference something specific from the vacancy description. Use phrasing like: *"Ваши требования к X — именно то, чем я занималась в Y"* / *"Your requirement for X matches my experience with Y at Z."*
+
+**Part 5 — Closing** (1 sentence)
+Express readiness to discuss the vacancy in more detail.
+Example: *"Буду рада рассказать подробнее на встрече."* / *"Happy to discuss further in a call."*
+
+**Total length: 7–10 sentences. No more, no less.**
+
+**Rules that apply to all parts:**
+- Every claim must be verifiable against the resume — no invented achievements
 - Use the company's own language from the vacancy description
+- Match the vacancy's language (Russian vacancy → Russian letter; English vacancy → English letter)
 - Never mention salary
 - Never restate the resume in paragraph form
-- Never use generic openers: "I am writing to express my interest...", "I am a passionate professional..."
+- Never use generic openers, never start mid-sentence: "I am writing to express my interest...", "Меня привлекает эта позиция в :"
 - Never apologize for gaps or missing skills
-- Match skills mentioned in the cover letter exactly to skills listed in the resume
+- Never start with Part 3 or Part 4 — the greeting and self-presentation are mandatory first
 
-**Before writing:** extract from the vacancy — company name, product/service, key challenge, top 2–3 required skills. Cross-reference with resume. Pick the format. Write.
+**Anti-patterns (do NOT do this):**
+- Starting with experience without greeting: *"Меня привлекает эта позиция в : мой опыт разработки..."* — missing Part 1 and Part 2
+- Skipping Part 4 — writing about own experience without explicitly mapping it to the vacancy requirements
+- Ending on experience without a closing sentence (Part 5)
+
+**Before writing:** extract from the vacancy — company name, hiring manager name (if any), product/service, top 2–3 required skills. Cross-reference with resume. Write all 5 parts in order.
 
 ### Step 7: Report
 
@@ -494,12 +481,6 @@ Create an artifact — daily report. Write in the user's chosen language.
 ## ⚠️ Technical notes
 (Re-auth needed, dead channels, platforms skipped, captcha hit, connection lost, etc.)
 ```
-
-**PushNotification after the run:**
-Send a PushNotification to the user with a summary including:
-- Number confirmed applied
-- Number of test assignments found (with count from `window.__testAssignments.length`)
-- Any captcha or error that stopped the run
 
 After creating the report: update `last_run_date` to today in `/areas/job-hunter-profile.md`.
 
@@ -705,7 +686,7 @@ File `/areas/job-hunter-profile.md`:
 
 **Permissions — once only.** Full domain list collected at onboarding, bulk-added by user. Never re-request.
 
-**Cover letters — short and specific.** 80–120 words. Specific to this vacancy. Every claim verifiable against resume. Format chosen per role type. Never mention salary.
+**Cover letters — mandatory 5-part structure (Bug 5 fix).** (1) Greeting → (2) Self-presentation → (3) Relevant experience → (4) Vacancy comparison → (5) Closing. Total 7–10 sentences. Every claim verifiable against resume. Language matches vacancy. Never skip any part. Never mention salary.
 
 **Report — artifact only.** Not in chat. Direct links to every vacancy in every section. Each vacancy on its own line — never comma-separated. URL must be a full `https://` address, never a platform name.
 
@@ -733,6 +714,10 @@ File `/areas/job-hunter-profile.md`:
 
 **Invitations.** Show ALL active invitations (from `negotiations?filter=all`) without filtering by date.
 
-**Salary check is mandatory before every apply.** `__checkSalaryPage(vacancyId, host)` must be called before every `__apply()` — including when resuming via `window.__resumeIdx`. Never use `window.__newCandidates` data for salary verification.
+**Salary check is mandatory before every apply.** `__checkSalaryPage(vacancyId, host)` must be called before every `__apply()` — including when resuming via `window.__resumeIdx`. Never use `window.__newCandidates` data for salary verification. (Bug 2 fix)
+
+**Report links — always iterate the array.** When generating the "Auto-applications" section, always iterate `window.__confirmedApplied[]` and output each entry's `.title`, `.company`, `.url` as a separate block. Using `.length` alone is a bug — it hides the links. (Bug 3 fix)
+
+**Test assignments — separate block.** `window.__testAssignments[]` must be output as a dedicated section in the report and in PushNotification summary with full `.url` links. (Bug 4 fix)
 
 **Creative opportunities — deadline horizon.** Default is 1 year. User sets it once in the creative profile interview (3 months / 6 months / 1 year / custom). Can be changed anytime: "change deadline horizon to 3 months". Save to `creative_profile.deadline_horizon` in memory.
