@@ -9,6 +9,20 @@ An automated, universal job search system. Works for any profession, any geograp
 
 ---
 
+## ⚠️ MANDATORY RULES (never override, never forget)
+
+These rules apply to EVERY run, EVERY document, EVERY cover letter:
+
+1. **Language: always Russian** — all messages, reports, cover letters, error notes. No exceptions.
+2. **Never call the user a "бизнес-аналитик" or "business analyst"** — only «системный аналитик» or «фулстек-аналитик». Applies to cover letters, reports, and all messages.
+3. **Never mention salary in cover letters** — it leads to rejections. This is an absolute prohibition.
+4. **Remote РФ — always exclude** — vacancies that say «удалённо по России», «резидентство РФ», «только граждане РФ», or list only Russian regions as location. The user does not live in Russia.
+5. **All links must be clickable** — in documents use `[anchor text](https://full-url)` format. Never put bare URLs without hyperlink markup.
+6. **All links must be verified** — after composing any document with vacancy links, verify EVERY link by navigating to it in the browser (or HEAD request). If a site returns ERR_CONNECTION_RESET, 404, or «Не удаётся получить доступ» — remove that vacancy/line from the document entirely or mark clearly as «⚠️ сайт недоступен». A document with unverified links is not complete.
+7. **Cover letter — 5-part mandatory structure** — see Cover Letter Framework section. Total 7–10 sentences. No salary. No «бизнес-аналитик».
+
+---
+
 ## Phase 0: Security check + language (very first run only)
 
 Check memory for `/areas/job-hunter-profile.md`. If `security_checked: true` is present — skip Phase 0 entirely.
@@ -73,31 +87,47 @@ Let's set up your search profile. Answer everything at once — I'll remember it
     a) I'll upload a PDF now
     b) Link to a profile (LinkedIn, hh.ru, etc.) — paste URL
     c) Both
+11. Work authorization: in which countries do you have a legal right to work?
+    (This determines which vacancies require permits you don't have — those will be flagged, not hidden.)
+12. English level: A1 / A2 / B1 / B2 / C1 / C2 / Native
+    (Vacancies requiring a higher level than yours will be flagged in the report.)
 ```
 
 After the user responds:
 - PDF → read contents, extract key skills, stack, experience
 - Profile link → open in browser, read, extract data
-- Save everything to `/areas/job-hunter-profile.md`
+- Save everything to `/areas/job-hunter-profile.md`, including:
+  - `work_permit_countries: [list]` — countries where user can legally work without sponsorship
+  - `english_level: [B1/B2/C1/etc]`
 
 ---
 
 ## Phase 2: Platform onboarding (after first profile setup)
 
-Build a **personalized platform list** based on the profile. Priority logic (determined dynamically):
+Build a **personalized platform list** based on the profile. The list has two parts:
+
+### Part A — Known platforms (fixed baseline)
+
+Priority logic (determined dynamically by profession + geo):
 
 **Level 1 — highest probability for this profession/geo:**
-- Russian-speaking IT → hh.ru + country HH domains (hh.kz, hh.uz, hh.ge, hh.am, cy.hh.ru, rabota.by), Habr Career, getmatch.ru, geekjob.ru, **hirify.me** (international aggregator with CIS-focused remote roles, API-based auto-apply)
-- International IT → LinkedIn, Indeed, Glassdoor, Wellfound, Remote.co
+- Russian-speaking IT → hh.ru + country HH domains (hh.kz, hh.uz, hh.ge, hh.am, cy.hh.ru, rabota.by), Habr Career, getmatch.ru, geekjob.ru, hirify.me
+- International IT → LinkedIn, Indeed, Glassdoor, Wellfound, Remote.co, hirify.me
 - Design → Behance Jobs, Dribbble Jobs, LinkedIn
 - Marketing → LinkedIn, local job boards
 - Finance / Analytics → LinkedIn, eFinancialCareers, local boards
+
+**hirify.me specifics:** AI-powered job matching platform. Supports resume upload and automatic vacancy matching. Check the personal feed on each run (login required). URL: https://hirify.me/
 
 **Level 2 — aggregators and niche platforms** (per profession)
 
 **Level 3 — Telegram channels** (live, active — see Phase 2b)
 
-Show the user the list with a reason for each platform. Ask them to:
+### Part B — Web search for new platforms (run ONCE at onboarding, then at Phase 5)
+
+See Phase 5 for the full web search procedure. Run it now to discover platforms the fixed list doesn't cover.
+
+Show the user the combined list (fixed + newly discovered) with a reason for each platform. Ask them to:
 1. Confirm the list (they can remove items)
 2. Log in to each platform in their browser
 
@@ -117,42 +147,25 @@ Go to tgstat.ru and telemetr.io. Search using profession keywords.
 
 Find 5–15 live channels. Save to profile with date of last post. Open in web.telegram.org to verify access.
 
-### Phase 2c: Hirify.me setup
-
-Hirify.me is an IT job aggregator and meta-aggregator with strong international remote filtering. It surfaces roles from multiple sources (LinkedIn, Habr Career, getmatch.ru, and others) in one feed with a built-in worldwide-remote filter.
-
-**Domains to allow:** `hirify.me, api.hirify.me`
-
-**Verifying login:** Navigate to `https://hirify.me`. Run:
-```js
-window.__NUXT__?.pinia?.auth?.user?._rawValue?.id  // non-null = logged in
-```
-
-**Fetching and storing profile IDs (run once at setup):**
-```js
-const p = await fetch('https://api.hirify.me/api/profile', {credentials: 'include'}).then(r => r.json());
-// p.id          → hirify_user_id   (number)
-// p.profiles[0].id → hirify_profile_id  (number, needed for every apply POST)
-```
-Save both to `/areas/job-hunter-profile.md` as `hirify_user_id` and `hirify_profile_id`. Read them from memory at the start of every daily run — do not re-fetch unless missing.
-
 ---
 
 ## Phase 3: Daily search run
 
-**Before starting:** check `last_run_date` in profile. If it equals today's date — ask the user: "The daily search was already run today. Run again?" Do not re-run automatically.
+**Before starting:** check `last_run_date` in profile. If it equals today's date — ask the user: «Поиск уже был запущен сегодня. Запустить снова?» Do not re-run automatically.
 
-**Also check for cold start:** if `last_run_date` is more than 14 days ago — notify the user: "Last run was [date]. Some platforms may need re-authorization, and some Telegram channels may have gone inactive. Running checks before search." Then: verify auth on each platform (mark any that need re-login), run Phase 5 channel activity check before searching.
+**Also check for cold start:** if `last_run_date` is more than 14 days ago — notify the user: «Последний запуск был [дата]. Некоторые платформы могут требовать повторной авторизации.» Then: verify auth on each platform (mark any that need re-login), run Phase 5 channel activity check before searching.
 
 ### Step 1: Resume check
 
-Read current resume from profile. Compare with previous version (hash or file date). If changed — re-read, update extracted skills and stack in profile, note at top of report: "📄 Resume updated — new skills applied to search."
+Read current resume from profile. Compare with previous version (hash or file date). If changed — re-read, update extracted skills and stack in profile, note at top of report: «📄 Резюме обновлено — новые навыки применены к поиску.»
 
 If the user says "update resume" or uploads a new file — process immediately, don't wait for the next run.
 
 ### Step 2: Platform search
 
-For each platform in priority order:
+**Step 2a — Search known platforms**
+
+For each platform in the saved list (priority order):
 1. Open in browser (using saved sessions)
 2. Apply search filters from profile
 3. Collect vacancies not older than [profile setting, default 3 days]
@@ -160,6 +173,28 @@ For each platform in priority order:
 5. Add to shared pool
 
 **If browser hits a login page** — do NOT abort the run. Mark platform as "needs re-auth", continue with others, note in report.
+
+**hirify.me specifics:** Open https://hirify.me/, log in if needed, navigate to the personal vacancy feed / matches section. Extract matched vacancies. If the platform returns a 401 or requires manual login — mark as "needs re-auth" in report and continue.
+
+**Step 2b — Web search for new platforms (every run)**
+
+On EVERY daily run, do a quick web search to discover job boards and aggregators not yet in the saved list. This supplements — never replaces — the known platforms.
+
+Search queries to run (adapt keywords to the user's profession and language):
+```
+"[profession] jobs remote [current year]" site:reddit.com OR site:news.ycombinator.com
+"[profession] job board [current year]"
+"best sites [profession] remote jobs [current year]"
+"[profession] вакансии удалённо [current year] сайты"
+```
+
+For each newly found platform:
+- Check if it's already in the saved list — skip if yes
+- Open the platform, run a quick search for the user's keywords
+- If relevant vacancies found → add to this run's pool AND propose adding to the saved list in the report
+- If no relevant results → note in report as «проверили, подходящих нет» and skip next time
+
+Report new platforms found in a dedicated section: **«🆕 Новые платформы — результаты поиска»** — list each with the number of relevant vacancies found (or zero).
 
 **hh.ru-specific checks (apply when searching hh.ru):**
 
@@ -189,49 +224,6 @@ Inspect the actual key names (they may differ from the documented API). If this 
 
 **User name:** Always read the user's first name from the API before the run: `fetch('https://api.hh.ru/me')` → use `me.first_name`. Never invent or guess the name.
 
-**hirify.me-specific instructions (apply when hirify.me is in the platform list):**
-
-**Architecture note:** Hirify.me is a Nuxt.js SSR app — all API calls happen server-side, so `read_network_requests` shows no `api.hirify.me` calls. Use the fetch API directly in the page context (browser auth cookie is sent automatically).
-
-**Search (paginated API):**
-```js
-const BASE = 'https://api.hirify.me';
-const q = encodeURIComponent('системный аналитик OR бизнес аналитик OR system analyst OR business analyst');
-let url = `${BASE}/api/vacancies?query=${q}&worldwide_remote=true&page=1`;
-const all = [];
-while (url && all.length < 150) {
-  const r = await fetch(url, {credentials: 'include'});
-  const data = await r.json();
-  all.push(...(data.data || []));
-  url = data.next_page_url || null;
-  await new Promise(res => setTimeout(res, 400));
-}
-```
-
-**Fields available in list response:**
-- `id` — integer vacancy ID
-- `title` — vacancy title
-- `slug` — URL slug; vacancy URL = `https://hirify.me/jobs/${slug}`
-- `has_applied` — `true` if already applied (authenticated); skip immediately if `true`
-- `salary_from`, `salary_to`, `salary_currency` — salary range (may be null)
-- `work_format` — array; must include `'remote'` or `'worldwide_remote'`
-- `created_at` — publication timestamp (ISO 8601)
-
-**Freshness filter:** `created_at` within the last 3 days (or profile setting).
-
-**Already-applied check:** `has_applied === true` on the list item — skip without fetching detail.
-
-**Full description (required for `filterFull`):** Description is NOT in the list response — only on the detail endpoint:
-```js
-const detail = await fetch(`${BASE}/api/vacancies/${vac.id}`, {credentials: 'include'}).then(r => r.json());
-const desc = detail.clear_text || detail.text || '';
-```
-Fetch detail only for items that pass the title-only filter pass in `filterFull`. Pass `null` as the `vac` argument (no HH employment classification on this platform).
-
-**Salary check:** `salary_from` or `salary_to` present → convert to USD. Both null → pass through (same rule as hh.ru: no salary stated = do not reject). Currency in `salary_currency` (e.g. `'USD'`, `'EUR'`, `'RUB'`).
-
-**Deduplication:** `has_applied === true` covers platform-level dedup. Additionally compare against local application history in memory by vacancy ID.
-
 ### Step 3: Telegram channel search
 
 Open web.telegram.org. Open each channel. Review posts from the last 24h (or since last run). Extract job links. If channels mention other active channels — add to check list.
@@ -251,10 +243,12 @@ Capture direct vacancy links, not just company pages.
 
 For each vacancy:
 1. **Exclusion filters** (from profile): remove by stack, industry, level
-2. **Geo check**: remove if not remote or wrong region
+2. **Geo check**: remove if not remote or wrong region; **Remote РФ ALWAYS excluded** — «удалённо по России», «резидентство РФ», «только граждане РФ», «только для граждан РФ» or only Russian cities listed
 3. **Salary**: remove if below threshold (when listed); vacancies with no salary listed — keep
 4. **Freshness**: remove if older than profile limit
 5. **Deduplication**: remove if same company + role already in history
+6. **Work permit check**: if the vacancy explicitly requires authorization to work in a country where the user does NOT have a permit → flag in report with label ⚠️ Требуется разрешение на работу. Show in separate section.
+7. **English level check**: if the vacancy explicitly requires C1, C2, or "native/fluent English" AND the user's English level is below that threshold → flag with label ⚠️ Требуется уровень [C1/native]. Show in separate section.
 
 After filtering — rank by relevance:
 - Key skills match from resume
@@ -275,17 +269,15 @@ window.W = s => new RegExp('(^|[^а-яёa-z0-9])(?:' + s + ')([^а-яёa-z0-9]|$
 
 window.filterFull = (name, desc, vac) => {
   // Bug 1 fix: check HH employment classification BEFORE regex filtering
-  // vac.employment?.id === 'probation' means HH classified this as an internship
   if (vac && vac.employment?.id === 'probation')
     return { pass: false, reason: 'probation-hh' };
 
   const titleOnly = (name || '').replace(/\s+/g, ' ').trim();
   const full = (titleOnly + ' ' + (desc || '')).replace(/\s+/g, ' ');
 
-  // Pass 1 — title only (role match + junior/intern check)
+  // Pass 1 — title only
   if (!/системный аналитик|system analyst|business analyst|technical business analyst|solutions analyst|integration analyst/i.test(titleOnly))
     return { pass: false, reason: 'not-SA-BA' };
-  // Bug 1 fix: added стажёром|ученик to Russian intern regex; added apprentice to W()-pattern
   if (/стажировк|стажер|стажёр|стажёром|ученик|ищем\s+стаж/i.test(titleOnly))
     return { pass: false, reason: 'intern' };
   if (W('junior|intern|trainee|apprentice').test(titleOnly))
@@ -341,15 +333,15 @@ window.filterFull = (name, desc, vac) => {
 };
 ```
 
-**Initialise `filterFull` once** at the top of each browser session, before the apply loop. The same function covers both hh.ru and all other platforms — just pass the vacancy title, description text, and vacancy object as arguments.
+**Initialise `filterFull` once** at the top of each browser session, before the apply loop.
 
-**False positives — do NOT block** (confirmed safe): "нефункциональные требования (ИБ, нагрузка)"; "понимание основ ИБ" in the "желательно" section; "консультирование junior-аналитиков"; "дашборды" listed as one of many tasks; "государственные структуры" in a client-list context; "командировки" appearing in a product name; "тестовое задание".
+**False positives — do NOT block** (confirmed safe): «нефункциональные требования (ИБ, нагрузка)»; «понимание основ ИБ» in the «желательно» section; «консультирование junior-аналитиков»; «дашборды» listed as one of many tasks; «государственные структуры» in a client-list context; «командировки» appearing in a product name; «тестовое задание».
 
 ### Step 6: Auto-applications
 
-**Limit per run: maximum 10 auto-applications per day** (hh.ru enforces a daily cap; exceeding it triggers captcha or account block). If more than 10 vacancies pass filters — apply to the top 10 by ranking score, add the rest to "interesting but not applied" section of the report.
+**Limit per run: maximum 10 auto-applications per day** (hh.ru enforces a daily cap; exceeding it triggers captcha or account block). If more than 10 vacancies pass filters — apply to the top 10 by ranking score, add the rest to «интересно — проверьте сами» section of the report.
 
-**Before sending any applications** — show the user a brief list: "Found N vacancies to apply to. Top 10 will be submitted automatically. Continue?" Wait for confirmation. This prevents accidental mass-applying.
+**Before sending any applications** — show the user a brief list: «Найдено N вакансий. Топ-10 будут поданы автоматически. Продолжить?» Wait for confirmation.
 
 **Initialize tracking arrays before the loop:**
 
@@ -415,176 +407,91 @@ for (let i = startIdx; i < vacancies.length; i++) {
 }
 ```
 
-**If platform supports browser-based application:**
-1. Open the vacancy
-2. Verify URL contains vacancy ID (`/vacancy/\d+`) — if not, construct it: `https://hh.ru/vacancy/${vacancyId}`
-3. Check vacancy is still live: if HEAD request returns 404, skip it and note in report
-4. Find the apply button
-5. Write a cover letter using the Cover Letter Framework below
-6. Submit — wait for HTTP 200 response before counting as applied
-7. Add a delay of 800ms minimum between applications to avoid rate limiting
-8. Record in `window.__confirmedApplied` as `{id, title, company, url}` (see Bug 3 fix above)
+**Application counting:** Only count vacancies where the submit returned HTTP 200. Status 403 (already applied) goes to «уже подавали» list. Status 429 (rate limit) → stop the loop immediately. Any other error → "failed" list.
 
-**Application counting:** Only count vacancies where the submit returned HTTP 200. Status 403 (already applied) goes to "already applied" list. Status 429 (rate limit) → stop the loop immediately. Any other error → "failed" list. Never increment the counter for failed or blocked requests.
+**Captcha detection:** If the apply function returns `{blocked: true}` — stop the entire application loop immediately.
 
-**Captcha detection:** If the apply function returns `{blocked: true}` — stop the entire application loop immediately. Log the captcha hit and add remaining vacancies to "action required" in the report.
+**If vacancy requires a test task** — do NOT auto-apply. Add to `window.__testAssignments` and report separately.
 
-**If vacancy requires a test task** — do NOT auto-apply. Add to `window.__testAssignments` and report separately (see Bug 4 fix above).
-
-**If application requires email / form** — add to "action required" list in report.
-
-**hirify.me-specific apply flow (use when vacancy host is hirify.me):**
-
-Read `hirify_profile_id` from `/areas/job-hunter-profile.md` before the loop. Never hardcode it.
-
-```js
-const hirifyProfileId = /* read from memory: hirify_profile_id */;
-
-// Step 1: fetch cover letter template (reference only — always write your own using Cover Letter Framework)
-const tplR = await fetch(`https://api.hirify.me/api/vacancy/${vacancyId}/cover-letter`, {credentials: 'include'});
-const tpl = tplR.ok ? await tplR.json() : null;
-// tpl.cover_letter — platform template; use as context, NOT as final letter
-
-// Step 2: compose 5-part cover letter using Cover Letter Framework (Bug 5)
-const coverLetter = /* your 5-part letter */;
-
-// Step 3: submit
-const applyR = await fetch('https://api.hirify.me/api/user/applications', {
-  method: 'POST',
-  credentials: 'include',
-  headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
-  body: JSON.stringify({
-    vacancy_id: vacancyId,       // integer
-    profile_id: hirifyProfileId, // from memory (hirify_profile_id)
-    cover_letter: coverLetter,
-    source: 'direct'
-  })
-});
-```
-
-**Status codes for hirify.me:**
-- `200` or `201` → applied successfully → push to `window.__confirmedApplied`
-- `409` → already applied → push to "already applied" list
-- `422` → validation error; log body, skip vacancy
-- `429` → rate limit → stop loop immediately
-
-**Test assignment check on hirify.me:** No `has_test` field in API. Check `clear_text`: `/тестовое задание|test\s*task/i` — if match, push to `window.__testAssignments` and skip apply.
-
-**Vacancy URL for report:** `https://hirify.me/jobs/${vacancy.slug}`
-
-**Delay between hirify.me applications:** 1000ms minimum (platform is stricter than hh.ru).
+**If application requires email / form** — add to «требует действия» list in report.
 
 ### Cover Letter Framework
 
 **Bug 5 fix — mandatory 5-part structure (November 2026):**
 
-> **Root cause:** Previous format instructions did not enforce a greeting, self-presentation, or explicit vacancy comparison. The resulting letters started mid-sentence ("Меня привлекает эта позиция в :"), omitted the greeting and self-intro, and failed to explicitly compare the candidate's experience against the vacancy requirements.
-
 Each cover letter **must** consist of exactly 5 parts in this order. Skipping any part is not allowed.
 
 **Part 1 — Greeting**
 Address the team or company by name. If the vacancy mentions a hiring manager's name — use it.
-Example: *"Добрый день, команда [Company]!"* / *"Hello, [Company] team!"*
+Example: *«Добрый день, команда [Company]!»*
 
 **Part 2 — Self-presentation** (1 sentence)
-One sentence stating the candidate's specific specialization relevant to this vacancy. Must NOT be generic — must name the specific role or domain.
-Example: *"Я — системный аналитик с 6+ летним опытом интеграций и API в B2B SaaS."*
+One sentence stating the candidate's specific specialization relevant to this vacancy. **NEVER use «бизнес-аналитик» or «business analyst» — only «системный аналитик» or «фулстек-аналитик».**
+Example: *«Я — системный аналитик с 6+ летним опытом интеграций и API в B2B SaaS.»*
 
 **Part 3 — Relevant experience** (2–3 sentences)
-Only experience that matches THIS vacancy's requirements. Pick 2–3 concrete achievements or skills from the resume that overlap with the vacancy. Do NOT copy-paste from resume wholesale.
-Example: *"В Handysay я выстраивала аналитику с нуля — от ТЗ на интеграции до A/B-тестов на 50k пользователей."*
+Only experience that matches THIS vacancy's requirements. Pick 2–3 concrete achievements or skills from the resume that overlap with the vacancy.
 
 **Part 4 — Vacancy comparison** (2–3 sentences)
-Explicit point-by-point mapping to the vacancy requirements. Reference something specific from the vacancy description. Use phrasing like: *"Ваши требования к X — именно то, чем я занималась в Y"* / *"Your requirement for X matches my experience with Y at Z."*
+Explicit point-by-point mapping to the vacancy requirements. Reference something specific from the vacancy description.
 
 **Part 5 — Closing** (1 sentence)
 Express readiness to discuss the vacancy in more detail.
-Example: *"Буду рада рассказать подробнее на встрече."* / *"Happy to discuss further in a call."*
+Example: *«Буду рада рассказать подробнее на встрече.»*
 
 **Total length: 7–10 sentences. No more, no less.**
 
-**Rules that apply to all parts:**
-- Every claim must be verifiable against the resume — no invented achievements
-- Use the company's own language from the vacancy description
-- Match the vacancy's language (Russian vacancy → Russian letter; English vacancy → English letter)
-- Never mention salary
-- Never restate the resume in paragraph form
-- Never use generic openers, never start mid-sentence: "I am writing to express my interest...", "Меня привлекает эта позиция в :"
-- Never apologize for gaps or missing skills
-- Never start with Part 3 or Part 4 — the greeting and self-presentation are mandatory first
+**Absolute prohibitions in cover letters:**
+- ❌ Never mention salary
+- ❌ Never call the user «бизнес-аналитик» or «business analyst» — only «системный аналитик» / «фулстек-аналитик»
+- ❌ Never restate the resume in paragraph form
+- ❌ Never use generic openers, never start mid-sentence
+- ❌ Never apologize for gaps or missing skills
+- ❌ Never skip any of the 5 parts
 
-**Anti-patterns (do NOT do this):**
-- Starting with experience without greeting: *"Меня привлекает эта позиция в : мой опыт разработки..."* — missing Part 1 and Part 2
-- Skipping Part 4 — writing about own experience without explicitly mapping it to the vacancy requirements
-- Ending on experience without a closing sentence (Part 5)
+---
 
-**Before writing:** extract from the vacancy — company name, hiring manager name (if any), product/service, top 2–3 required skills. Cross-reference with resume. Write all 5 parts in order.
+### Step 7: Report — Claude Docs document
 
-### Step 7: Report
+**The daily report is a Claude Docs document** (not a chat message, not an HTML artifact). Create it via `mcp__Claude_Docs__batch` with `container.create`.
 
-Create an artifact — daily report. Write in the user's chosen language.
+**Document structure — REQUIRED sections in this order:**
 
 ```
-# 🔍 Job Search Report — [date]
+# Отчёт по поиску работы — [число месяца на русском]
 
-## 📊 Summary
-- Vacancies found: N
-- After filtering: N
-- Auto-applied (confirmed HTTP 200): N
-- Already applied earlier: N
-- Require your action: N
-- Test assignments (skipped auto-apply): N
-- Failed / skipped: N
+[дата] · [mention пользователя]
 
----
+[Краткое summary одной строкой: N авто-откликов на hh.ru, N TG-сообщений через Hirify, N вакансий требуют ручного отклика.]
 
-## ✅ Auto-applications [N confirmed]
-// Bug 3 fix: iterate window.__confirmedApplied[] and output .title, .company, .url per entry
-// NEVER use window.__confirmedApplied.length alone — always output each entry individually
-[For each entry in window.__confirmedApplied — one per block:]
-**[entry.title] — [entry.company]**
-📎 [entry.url]  ← full https:// URL from the entry object
-💼 Platform: ...
-📝 Letter preview: "[first 15 words of cover letter]..."
-📅 Published: [date]
+## hh.ru — Авто-отклики [N]
+Таблица: Вакансия | Платформа | Статус
+(ссылки в формате [Название](https://hh.ru/vacancy/ID))
 
----
+## Hirify.me — TG-сообщения отправлены [N]
+Таблица: Компания | Должность | Платформа | HR | Статус
 
-## 🧪 Test assignments — apply manually [N]
-// Bug 4 fix: output window.__testAssignments[] as a separate block
-[For each entry in window.__testAssignments — one per block:]
-**[entry.title] — [entry.company]**
-📎 [entry.url]  ← full https:// URL
-📝 Requires: test assignment before application
+## Hirify.me — Требуют ручного отклика [N]
+Таблица: Компания | Должность | Платформа | Как откликнуться
 
----
+## Hirify.me — Заблокированы / Plus [N]
+Таблица: Компания | Должность | Платформа | Причина
 
-## ⚡ Require your action [N]
-[For each — one per line:]
-**[Role] — [Company]**
-📎 [direct link — always a full https:// URL]
-❓ Reason: test task / email application / registration required / captcha stopped run / direct link unavailable — open manually
-📅 Published: [date]
+## Новые платформы — результаты поиска
+Таблица: Платформа | Ссылка поиска | Результат
 
----
-
-## 🔶 Interesting — check yourself [N]
-(Vacancies near filter thresholds or above the 10-application limit)
-[For each: full direct link, role, company, why flagged]
-
----
-
-## 📬 Invitations to interview (all active)
-[Fetched from https://hh.ru/applicant/negotiations?filter=all — ALL invitations, not filtered by date]
-[For each: role, company, date received, link]
-
----
-
-## ⚠️ Technical notes
-(Re-auth needed, dead channels, platforms skipped, captcha hit, connection lost, etc.)
+## Что сделать вручную
+Нумерованный список с кликабельными ссылками на каждое действие.
 ```
 
-After creating the report: update `last_run_date` to today in `/areas/job-hunter-profile.md`.
+**Rules for the document:**
+
+1. **ALL links MUST be clickable** — format: `[anchor text](https://full-url)`. Never bare URLs. Applies to ALL sections — tables, lists, everywhere.
+2. **Verify ALL links BEFORE finalizing** — after writing the document, navigate to each link in the browser. If a site returns ERR_CONNECTION_RESET, 404, or «Не удаётся получить доступ» — remove that row/item from the document or replace the link with «⚠️ сайт недоступен». A document with unverified links is NOT complete.
+3. **Hirify short URL format** — use `https://hirify.me/jobs/[ID]` (no slug). These return HTTP 200.
+4. **External career sites** — verify by navigating in browser (not `fetch()` — CORS will block). If unavailable, remove link.
+5. **Document title** — in Russian, with the date in Russian format: «Отчёт по поиску работы — 5 ноября 2026».
+6. **Link verification** — hh.ru and Hirify links: verify via fetch(url, {method:'HEAD'}) in browser console. External sites: open in browser tab directly.
 
 ---
 
@@ -596,234 +503,99 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 2. Read contents
 3. Compare with previous version — show diff: what was added, what changed
 4. Update extracted skills and stack in profile
-5. Confirm in user's language: "Resume updated. New skills [list] will be applied to next search."
+5. Confirm in user's language: «Резюме обновлено. Новые навыки [список] применены к поиску.»
 
 ---
 
-## Phase 5: Source expansion (weekly or on request)
+## Phase 5: Source expansion
 
-Runs automatically once a week, or when user says "find new channels / platforms".
+**Two modes:**
+- **Quick scan (every daily run):** runs as Step 2b inside Phase 3 — a lightweight web search for new platforms, described there.
+- **Deep scan (weekly or on request):** full procedure below.
+
+### Deep scan procedure
 
 - Check activity of current Telegram channels (remove ones with last post > 30 days)
-- Search for new channels on tgstat.ru / telemetr.io
-- Web search for new niche platforms: "[profession] job board [year]", "[profession] jobs Telegram"
-- Update list in profile
-- Include as separate block in next report: "Search sources updated: [added N, removed N]"
+- Search for new Telegram channels on tgstat.ru / telemetr.io
+- Run an expanded web search for new niche platforms and aggregators
+- For each new platform found: open it, check if relevant vacancies exist, verify language requirement compatibility
+- Update saved platform list in profile
+- Include as separate block in next report: «Источники обновлены: добавлено N, удалено N, проверено N»
+
+**Key rule:** Never limit discovery to a fixed predefined list. Discover fresh every week.
 
 ---
 
 ## Phase 6: Creative opportunities (on request)
 
-A separate mode for artists, designers, and creative practitioners. Runs independently from the job search — does not affect the daily run, application history, or profile.
+A separate mode for artists, designers, and creative practitioners. Runs independently from the job search.
 
-**Trigger phrases (any language):**
-- "find open calls", "find residencies", "find art fairs", "find galleries for my work"
-- "найди опен-коллы", "найди резиденции", "найди ярмарки", "найди галереи под мои работы"
-- "find opportunities for [medium]", "where can I submit my work", "find calls for digital art / AI art / light installations"
+**Trigger phrases:** "find open calls", "find residencies", "find art fairs", «найди опен-коллы», «найди резиденции», «найди ярмарки»
 
 **Before searching:** ask the user (once, save to profile):
-1. Medium / format: digital art, AI art, painting, photography, light/sound installation, video, mixed media — or combination
+1. Medium / format: digital art, AI art, painting, photography, light/sound installation, video, mixed media
 2. Career stage: emerging / mid-career / established
 3. Geography: open to international / Europe only / specific countries
-4. What to find (they can pick several):
-   - Open calls & competitions
-   - Residencies
-   - Art fairs (to apply as exhibitor)
-   - Galleries (to approach for representation or exhibition)
-5. Deadline horizon: how far ahead to look? Options: 3 months / 6 months / 1 year / custom. **Default: 1 year.** User can change anytime by saying "update my creative profile" or "change deadline horizon".
+4. What to find: Open calls & competitions / Residencies / Art fairs / Galleries
+5. Deadline horizon: 3 months / 6 months / 1 year / custom. **Default: 1 year.**
 
-Save answers as `creative_profile` in `/areas/job-hunter-profile.md`. On subsequent runs — skip the interview, use saved profile. User can say "update my creative profile" to change it.
-
----
-
-### 6a: Open calls & competitions
-
-Search sources:
-- **Aggregators:** e-flux.com/announcements, artrabbit.com, callforentry.org (CaFÉ), submittable.com, transartists.org, resartis.org
-- **Medium-specific:** Ars Electronica (digital/AI), FILE Festival, ISEA, Prix Net Art — for digital/AI/interactive work
-- **Web search:** `"open call" [medium] [year] deadline site:e-flux.com OR site:artrabbit.com`
-
-**Rules:**
-- Deadline must be in the future (today or later) — never show expired calls
-- Use the deadline horizon from `creative_profile` (default: 1 year ahead)
-- Rolling / ongoing deadlines: include and label clearly as "rolling"
-- Verify each link: must open without error, lead to the current cycle (not a past year's closed call)
-- If direct fetch is blocked → use secondary source (aggregator page, cached version), note in report
-
----
-
-### 6b: Residencies
-
-Search sources: resartis.org, transartists.org, artistcommunities.org, e-flux.com/announcements
-
-Filter by:
-- Medium compatibility (a residency for painters ≠ a residency for digital/AI art)
-- Geography (if user specified)
-- Duration (note it — some are 1 week, some 3 months)
-- Whether stipend / accommodation is provided — flag this
-
----
-
-### 6c: Art fairs (exhibitor applications)
-
-Art fairs where artists or galleries can apply to exhibit:
-
-**Major international:** Frieze, Art Basel, NADA, Untitled Art Fair, Liste, CHART, Future Fair
-**Digital/new media focused:** Ars Electronica Festival, transmediale, ISEA, Mutek
-**Emerging artist fairs:** Supermarket Art Fair, VOLTA, Paper Positions
-
-Search for: `"[fair name] [year] application" OR "open application [fair name]"`
-
-**Rules:**
-- Application deadline must be in the future
-- Distinguish: some fairs accept galleries only, some accept artists directly — note which
-- Include application fee if mentioned
-- Link must go to the application page, not the fair's homepage
-
----
-
-### 6d: Galleries (for representation or exhibition proposals)
-
-**Only suggest galleries that match the user's medium.** A gallery that shows oil paintings is irrelevant for AI/digital art.
-
-**For digital / AI art / new media:**
-Search: `"digital art gallery" open submissions [year]`, `"AI art" gallery representation`, `"new media art" gallery call`
-
-Known galleries in this space: Bitforms Gallery (NY), Gazelli Art House (London/Baku), Nome Gallery (Berlin), Carroll/Fletcher (London), Panke Gallery (Berlin), ADM Gallery (Singapore), DAM Gallery (Berlin/Frankfurt)
-
-**For light/sound/installation (large-format work):**
-Requires venues with technical capacity (high ceilings, blackout, AV infrastructure). Search: `"immersive art" venue open call`, `"light installation" residency`, `"sound installation" exhibition proposal`
-
-**Output per gallery:**
-- Name + city
-- What they show (medium)
-- Whether they accept unsolicited submissions (and how)
-- Direct link to submissions page or contact
-- Note if submissions are currently open vs. ongoing
-
----
-
-### 6e: Report format for creative opportunities
-
-Create a separate artifact (never mix with job search report):
-
-```
-# 🎨 Creative Opportunities Report — [date]
-
-## 📊 Summary
-- Open calls: N (deadlines within [horizon from creative_profile, default 1 year])
-- Residencies: N
-- Art fairs (open applications): N
-- Galleries (accepting submissions): N
-- Expired / unverified links removed: N
-
----
-
-## 📋 Open Calls & Competitions [N]
-[For each — one per block:]
-**[Name]**
-🔗 [direct link to application page]
-📅 Deadline: [date] / Rolling
-💰 Fee: [amount or "free"]
-📍 [location or "international / online"]
-📝 [1-sentence description of what they're looking for]
-
----
-
-## 🏡 Residencies [N]
-[For each:]
-**[Name] — [location]**
-🔗 [link]
-📅 Deadline: [date] / Rolling
-⏱ Duration: [weeks/months]
-💰 Stipend / accommodation: [yes/no/partial]
-📝 [medium fit + 1-sentence note]
-
----
-
-## 🖼 Art Fairs — open applications [N]
-[For each:]
-**[Fair name] — [city, year]**
-🔗 [application page link]
-📅 Application deadline: [date]
-👤 Accepts: artists directly / galleries only / both
-💰 Booth fee range: [if mentioned]
-
----
-
-## 🏛 Galleries — accepting submissions [N]
-[For each:]
-**[Gallery name] — [city]**
-🔗 [submissions page]
-📬 How to submit: [email / online form / open call]
-🎨 Medium focus: [what they show]
-📝 [1-sentence note on fit]
-
----
-
-## ⚠️ Notes
-(Links that couldn't be verified, fairs that only accept galleries, calls outside the deadline horizon, etc.)
-```
+Save answers as `creative_profile` in `/areas/job-hunter-profile.md`.
 
 ---
 
 ## What is stored in memory
 
 File `/areas/job-hunter-profile.md`:
-- `language`: chosen language (set in Phase 0)
-- `security_checked: true` (set after Phase 0 completes)
+- `language`: chosen language
+- `security_checked: true`
 - User profile: profession, keywords, geo, remote preference, salary threshold, experience level, exclusions
-- Resume: file path / link / hash of last version / extracted skills and stack
-- Platform list with priorities and full domain lists for permissions
-- Telegram channel list with date of last post and last check
+- `work_permit_countries`: list of countries where user can legally work without sponsorship
+- `english_level`: user's English level (A1–C2)
+- Resume: file path / link / hash / extracted skills and stack
+- Platform list with priorities and full domain lists
+- Telegram channel list with date of last post
 - Application history: vacancy ID, company, role, date, status
 - `last_run_date`: date of last Phase 3 run
-- `hirify_user_id`: hirify.me user ID (from `GET /api/profile` → `id`)
-- `hirify_profile_id`: hirify.me profile ID needed for every apply POST (from `GET /api/profile` → `profiles[0].id`)
-- `creative_profile`: medium, career stage, geography, what to find, deadline horizon (Phase 6)
+- `creative_profile`: medium, career stage, geography, what to find, deadline horizon
 
 ---
 
 ## Key principles
 
-**Don't stop on minor errors.** One platform down → continue with others, note in report. Never abort the full run.
+**🔴 MANDATORY RULES (highest priority, never override):**
+- **Язык — всегда русский.** Все сообщения, отчёты, кавер-леттеры, технические заметки.
+- **Никогда не называть пользователя «бизнес-аналитик».** Только «системный аналитик» или «фулстек-аналитик».
+- **Зарплату в кавер-леттерах не упоминать.** Абсолютный запрет.
+- **Remote РФ — всегда исключать.** Пользователь не живёт в России.
+- **Все ссылки в документе — кликабельные.** Формат: `[текст](url)`. Без этого документ не считается завершённым.
+- **Все ссылки — проверены.** Недоступные сайты (ERR_CONNECTION_RESET, 404) — строку удалить или пометить `⚠️ сайт недоступен`.
+
+**Don't stop on minor errors.** One platform down → continue with others, note in report.
 
 **Permissions — once only.** Full domain list collected at onboarding, bulk-added by user. Never re-request.
 
-**Cover letters — mandatory 5-part structure (Bug 5 fix).** (1) Greeting → (2) Self-presentation → (3) Relevant experience → (4) Vacancy comparison → (5) Closing. Total 7–10 sentences. Every claim verifiable against resume. Language matches vacancy. Never skip any part. Never mention salary.
+**Cover letters — mandatory 5-part structure (Bug 5 fix).** (1) Greeting → (2) Self-presentation → (3) Relevant experience → (4) Vacancy comparison → (5) Closing. Total 7–10 sentences. Never mention salary. Never say «бизнес-аналитик».
 
-**Report — artifact only.** Not in chat. Direct links to every vacancy in every section. Each vacancy on its own line — never comma-separated. URL must be a full `https://` address, never a platform name.
+**Report — Claude Docs document.** Not in chat, not HTML artifact. Direct clickable links to every vacancy in every section.
 
-**Bug 3 fix reminder:** When generating the "Auto-applications" section of the report, always iterate `window.__confirmedApplied[]` and output each entry's `.title`, `.company`, and `.url` as a separate block. Using `.length` alone is a bug — it hides the links the user needs to track applications.
+**Bug 3 fix reminder:** Always iterate `window.__confirmedApplied[]` and output each entry's `.title`, `.company`, and `.url` as a separate block.
 
-**Bug 4 fix reminder:** When generating the report, always output `window.__testAssignments[]` as a dedicated "Test assignments" section with full `.url` links. Also include the count in the PushNotification summary.
+**Bug 4 fix reminder:** Always output `window.__testAssignments[]` as a dedicated section with full `.url` links.
 
 **Resume — live.** Check hash on every run. If changed → re-read and apply.
 
-**Language — consistent.** Set once in Phase 0. Used everywhere: messages, onboarding, reports, cover letters, error notes.
-
-**Auto-apply limit.** Max 10 per run. Confirm before sending. Count ONLY confirmed HTTP 200 responses — never count 403, 429, or errors.
+**Auto-apply limit.** Max 10 per run. Confirm before sending. Count ONLY confirmed HTTP 200 responses.
 
 **Cold start detection.** If last run > 14 days ago → verify auth and channel activity before searching.
 
-**Captcha = full stop.** If captcha is detected during the application loop → stop immediately, move remaining vacancies to "action required", send PushNotification to the user.
+**Captcha = full stop.** Stop immediately → move remaining to «требует действия» → notify user.
 
-**Network errors.** Wrap every fetch in try/catch. On error: increment failed counter, wait 1 second, continue to next vacancy. Never let a single network error abort the whole run.
+**Salary check is mandatory before every apply.** `__checkSalaryPage()` must be called before every `__apply()`. Never use cached data.
 
-**Browser state.** Before starting the application loop, verify that in-browser state variables (applied list, vacancy pool, resume hash) exist. If lost (e.g. bridge reconnect), re-collect from scratch before proceeding.
+**Work permit — flag, never hide.** Vacancies requiring a work permit the user doesn't have go into a dedicated report section.
 
-**Always notify on failure.** If the run is interrupted for any reason (captcha, connection loss, unhandled error) — send PushNotification so the user knows the task did not complete.
+**English level — flag, never auto-reject.** Vacancies requiring C1/C2/native → dedicated report section.
 
-**User name.** Always fetch from `https://api.hh.ru/me` → `first_name`. Never invent or guess it.
+**New platforms — every run.** Step 2b runs on every daily run, not just weekly.
 
-**Invitations.** Show ALL active invitations (from `negotiations?filter=all`) without filtering by date.
-
-**Salary check is mandatory before every apply.** `__checkSalaryPage(vacancyId, host)` must be called before every `__apply()` — including when resuming via `window.__resumeIdx`. Never use `window.__newCandidates` data for salary verification. (Bug 2 fix)
-
-**Report links — always iterate the array.** When generating the "Auto-applications" section, always iterate `window.__confirmedApplied[]` and output each entry's `.title`, `.company`, `.url` as a separate block. Using `.length` alone is a bug — it hides the links. (Bug 3 fix)
-
-**Test assignments — separate block.** `window.__testAssignments[]` must be output as a dedicated section in the report and in PushNotification summary with full `.url` links. (Bug 4 fix)
-
-**Creative opportunities — deadline horizon.** Default is 1 year. User sets it once in the creative profile interview (3 months / 6 months / 1 year / custom). Can be changed anytime: "change deadline horizon to 3 months". Save to `creative_profile.deadline_horizon` in memory.
-
-**Hirify.me profile IDs — read from memory, never re-fetch.** `hirify_profile_id` (from memory) is required in every `POST /api/user/applications` body. If missing from memory, run Phase 2c setup to fetch and store it. Vacancy URL is always `https://hirify.me/jobs/${vacancy.slug}`. Min delay between applications: 1000ms.
+**Link verification is not optional.** CORS blocks `fetch()` for external sites — navigate in browser tab directly.
