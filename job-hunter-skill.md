@@ -211,7 +211,12 @@ After filtering — rank by relevance:
 ```js
 window.W = s => new RegExp('(^|[^а-яёa-z0-9])(?:' + s + ')([^а-яёa-z0-9]|$)', 'i');
 
-window.filterFull = (name, desc) => {
+window.filterFull = (name, desc, vac) => {
+  // Bug 1 fix: check HH employment classification BEFORE regex filtering
+  // vac.employment?.id === 'probation' means HH classified this as an internship
+  if (vac && vac.employment?.id === 'probation')
+    return { pass: false, reason: 'probation-hh' };
+
   const titleOnly = (name || '').replace(/\s+/g, ' ').trim();
   const full = (titleOnly + ' ' + (desc || '')).replace(/\s+/g, ' ');
 
@@ -220,9 +225,10 @@ window.filterFull = (name, desc) => {
     return { pass: false, reason: 'not-SA-BA' };
 
   // 2. СТАЖИРОВКИ / ДЖУНЫ — только заголовок
-  if (/стажировк|стажер|стажёр|ищем\s+стаж/i.test(titleOnly))
+  // Bug 1 fix: added ученик|стажёром to Russian intern regex; added apprentice to W()-pattern
+  if (/стажировк|стажер|стажёр|стажёром|ученик|ищем\s+стаж/i.test(titleOnly))
     return { pass: false, reason: 'intern' };
-  if (W('junior|intern|trainee').test(titleOnly))
+  if (W('junior|intern|trainee|apprentice').test(titleOnly))
     return { pass: false, reason: 'junior' };
   if (/младший\s+аналитик/i.test(titleOnly))
     return { pass: false, reason: 'junior' };
@@ -299,7 +305,81 @@ window.filterFull = (name, desc) => {
 
 **Before sending any applications** — show the user a brief list: "Found N vacancies to apply to. Top 10 will be submitted automatically. Continue?" Wait for confirmation. This prevents accidental mass-applying.
 
+**Initialize tracking arrays before the loop:**
+
+```js
+// Bug 4 fix: initialize before the apply loop
+window.__testAssignments = [];
+// window.__confirmedApplied is also initialized here if not already set
+window.__confirmedApplied = window.__confirmedApplied || [];
+```
+
 For each vacancy in the confirmed top-10:
+
+**Bug 4 fix — test assignment detection (check BEFORE attempting to apply):**
+```js
+// Check if vacancy requires a test assignment
+const hasTest = vacancy.has_test === true ||
+  /тестовое задание|test\s*task/i.test(vacancy.description || '');
+
+if (hasTest) {
+  window.__testAssignments.push({
+    id: vacancy.id || vacancy.vacancyId,
+    host: vacancy.host || 'hh.ru',
+    title: vacancy.title || vacancy.name,
+    company: vacancy.company?.name || vacancy.company?.visibleName || vacancy.employer?.name,
+    url: vacancy.url || `https://hh.ru/vacancy/${vacancy.id || vacancy.vacancyId}`
+  });
+  // Skip __apply() — do not auto-apply to vacancies requiring test tasks
+  continue;
+}
+```
+
+**Bug 2 fix — salary check is MANDATORY before every __apply(), including resumed loops:**
+
+> **CRITICAL RULE:** `__checkSalaryPage(vacancyId, host)` MUST be called before every single `__apply()` call — including when the apply loop is resumed via `window.__resumeIdx`. Never rely on salary data cached in `window.__newCandidates` or any other pre-collected data structure for the salary check. Always fetch fresh from the vacancy page.
+
+```js
+// If loop is resumed (window.__resumeIdx is set), start from that index
+// but ALWAYS call __checkSalaryPage for each vacancy regardless
+const startIdx = window.__resumeIdx || 0;
+for (let i = startIdx; i < vacancies.length; i++) {
+  const vac = vacancies[i];
+  const vacancyId = vac.id || vac.vacancyId;
+
+  // Check test assignment first (Bug 4 fix)
+  const hasTest = vac.has_test === true ||
+    /тестовое задание|test\s*task/i.test(vac.description || '');
+  if (hasTest) {
+    window.__testAssignments.push({ id: vacancyId, host: vac.host || 'hh.ru',
+      title: vac.title || vac.name,
+      company: vac.company?.name || vac.company?.visibleName,
+      url: vac.url || `https://hh.ru/vacancy/${vacancyId}` });
+    continue;
+  }
+
+  // Bug 2 fix: salary check is mandatory here — NEVER skip, NEVER use __newCandidates
+  const salaryOk = await __checkSalaryPage(vacancyId, vac.host || 'hh.ru');
+  if (!salaryOk) continue;
+
+  const result = await __apply(vacancyId, vac.host || 'hh.ru');
+
+  if (result.status === 200) {
+    // Bug 3 fix: push full object so report can iterate with links
+    window.__confirmedApplied.push({
+      id: vacancyId,
+      title: vac.title || vac.name,
+      company: vac.company?.name || vac.company?.visibleName || vac.employer?.name,
+      url: vac.url || `https://hh.ru/vacancy/${vacancyId}`
+    });
+  } else if (result.status === 429) {
+    // Rate limit — stop immediately
+    break;
+  }
+  // Save progress index so the loop can resume if interrupted
+  window.__resumeIdx = i + 1;
+}
+```
 
 **If platform supports browser-based application:**
 1. Open the vacancy
@@ -309,15 +389,11 @@ For each vacancy in the confirmed top-10:
 5. Write a cover letter using the Cover Letter Framework below
 6. Submit — wait for HTTP 200 response before counting as applied
 7. Add a delay of 800ms minimum between applications to avoid rate limiting
-8. Record in application history with `{title, company, url, status: 200}`
+8. Record in `window.__confirmedApplied` as `{id, title, company, url}` (see Bug 3 fix above)
 
 **Application counting:** Only count vacancies where the submit returned HTTP 200. Status 403 (already applied) goes to "already applied" list. Status 429 (rate limit) → stop the loop immediately. Any other error → "failed" list. Never increment the counter for failed or blocked requests.
 
 **Captcha detection:** If the apply function returns `{blocked: true}` — stop the entire application loop immediately. Log the captcha hit and add remaining vacancies to "action required" in the report.
-
-**If vacancy requires a test task** — do NOT auto-apply. Add to separate list in report.
-
-**If application requires email / form** — add to "action required" list in report.
 
 ### Cover Letter Framework
 
@@ -367,17 +443,30 @@ Create an artifact — daily report. Write in the user's chosen language.
 - Auto-applied (confirmed HTTP 200): N
 - Already applied earlier: N
 - Require your action: N
+- Test assignments (skipped auto-apply): N
 - Failed / skipped: N
 
 ---
 
 ## ✅ Auto-applications [N confirmed]
-[For each — one per line:]
-**[Role] — [Company]**
-📎 https://hh.ru/vacancy/[ID]  ← full working URL, never platform name alone
+// Bug 3 fix: iterate window.__confirmedApplied[] and output .title, .company, .url per entry
+// NEVER use window.__confirmedApplied.length alone — always output each entry individually
+[For each entry in window.__confirmedApplied — one per block:]
+**[entry.title] — [entry.company]**
+📎 [entry.url]  ← full https:// URL from the entry object
 💼 Platform: ...
 📝 Letter preview: "[first 15 words of cover letter]..."
 📅 Published: [date]
+
+---
+
+## 🧪 Test assignments — apply manually [N]
+// Bug 4 fix: output window.__testAssignments[] as a separate block
+// These vacancies were NOT auto-applied; user must handle them manually
+[For each entry in window.__testAssignments — one per block:]
+**[entry.title] — [entry.company]**
+📎 [entry.url]  ← full https:// URL
+📝 Requires: test assignment before application
 
 ---
 
@@ -405,6 +494,12 @@ Create an artifact — daily report. Write in the user's chosen language.
 ## ⚠️ Technical notes
 (Re-auth needed, dead channels, platforms skipped, captcha hit, connection lost, etc.)
 ```
+
+**PushNotification after the run:**
+Send a PushNotification to the user with a summary including:
+- Number confirmed applied
+- Number of test assignments found (with count from `window.__testAssignments.length`)
+- Any captcha or error that stopped the run
 
 After creating the report: update `last_run_date` to today in `/areas/job-hunter-profile.md`.
 
@@ -614,6 +709,10 @@ File `/areas/job-hunter-profile.md`:
 
 **Report — artifact only.** Not in chat. Direct links to every vacancy in every section. Each vacancy on its own line — never comma-separated. URL must be a full `https://` address, never a platform name.
 
+**Bug 3 fix reminder:** When generating the "Auto-applications" section of the report, always iterate `window.__confirmedApplied[]` and output each entry's `.title`, `.company`, and `.url` as a separate block. Using `.length` alone is a bug — it hides the links the user needs to track applications.
+
+**Bug 4 fix reminder:** When generating the report, always output `window.__testAssignments[]` as a dedicated "Test assignments" section with full `.url` links. Also include the count in the PushNotification summary.
+
 **Resume — live.** Check hash on every run. If changed → re-read and apply.
 
 **Language — consistent.** Set once in Phase 0. Used everywhere: messages, onboarding, reports, cover letters, error notes.
@@ -633,5 +732,7 @@ File `/areas/job-hunter-profile.md`:
 **User name.** Always fetch from `https://api.hh.ru/me` → `first_name`. Never invent or guess it.
 
 **Invitations.** Show ALL active invitations (from `negotiations?filter=all`) without filtering by date.
+
+**Salary check is mandatory before every apply.** `__checkSalaryPage(vacancyId, host)` must be called before every `__apply()` — including when resuming via `window.__resumeIdx`. Never use `window.__newCandidates` data for salary verification.
 
 **Creative opportunities — deadline horizon.** Default is 1 year. User sets it once in the creative profile interview (3 months / 6 months / 1 year / custom). Can be changed anytime: "change deadline horizon to 3 months". Save to `creative_profile.deadline_horizon` in memory.
