@@ -87,7 +87,7 @@ After the user responds:
 Build a **personalized platform list** based on the profile. Priority logic (determined dynamically):
 
 **Level 1 — highest probability for this profession/geo:**
-- Russian-speaking IT → hh.ru + country HH domains (hh.kz, hh.uz, hh.ge, hh.am, cy.hh.ru, rabota.by), Habr Career, getmatch.ru, geekjob.ru
+- Russian-speaking IT → hh.ru + country HH domains (hh.kz, hh.uz, hh.ge, hh.am, cy.hh.ru, rabota.by), Habr Career, getmatch.ru, geekjob.ru, **hirify.me** (international aggregator with CIS-focused remote roles, API-based auto-apply)
 - International IT → LinkedIn, Indeed, Glassdoor, Wellfound, Remote.co
 - Design → Behance Jobs, Dribbble Jobs, LinkedIn
 - Marketing → LinkedIn, local job boards
@@ -116,6 +116,25 @@ Go to tgstat.ru and telemetr.io. Search using profession keywords.
 **Skip if:** last post > 30 days, < 3 job posts/month, mostly spam or course ads.
 
 Find 5–15 live channels. Save to profile with date of last post. Open in web.telegram.org to verify access.
+
+### Phase 2c: Hirify.me setup
+
+Hirify.me is an IT job aggregator and meta-aggregator with strong international remote filtering. It surfaces roles from multiple sources (LinkedIn, Habr Career, getmatch.ru, and others) in one feed with a built-in worldwide-remote filter.
+
+**Domains to allow:** `hirify.me, api.hirify.me`
+
+**Verifying login:** Navigate to `https://hirify.me`. Run:
+```js
+window.__NUXT__?.pinia?.auth?.user?._rawValue?.id  // non-null = logged in
+```
+
+**Fetching and storing profile IDs (run once at setup):**
+```js
+const p = await fetch('https://api.hirify.me/api/profile', {credentials: 'include'}).then(r => r.json());
+// p.id          → hirify_user_id   (number)
+// p.profiles[0].id → hirify_profile_id  (number, needed for every apply POST)
+```
+Save both to `/areas/job-hunter-profile.md` as `hirify_user_id` and `hirify_profile_id`. Read them from memory at the start of every daily run — do not re-fetch unless missing.
 
 ---
 
@@ -169,6 +188,49 @@ const parsed = JSON.parse(data.getAttribute('data-initial-state'));
 Inspect the actual key names (they may differ from the documented API). If this fails, log a warning but do NOT abort the run.
 
 **User name:** Always read the user's first name from the API before the run: `fetch('https://api.hh.ru/me')` → use `me.first_name`. Never invent or guess the name.
+
+**hirify.me-specific instructions (apply when hirify.me is in the platform list):**
+
+**Architecture note:** Hirify.me is a Nuxt.js SSR app — all API calls happen server-side, so `read_network_requests` shows no `api.hirify.me` calls. Use the fetch API directly in the page context (browser auth cookie is sent automatically).
+
+**Search (paginated API):**
+```js
+const BASE = 'https://api.hirify.me';
+const q = encodeURIComponent('системный аналитик OR бизнес аналитик OR system analyst OR business analyst');
+let url = `${BASE}/api/vacancies?query=${q}&worldwide_remote=true&page=1`;
+const all = [];
+while (url && all.length < 150) {
+  const r = await fetch(url, {credentials: 'include'});
+  const data = await r.json();
+  all.push(...(data.data || []));
+  url = data.next_page_url || null;
+  await new Promise(res => setTimeout(res, 400));
+}
+```
+
+**Fields available in list response:**
+- `id` — integer vacancy ID
+- `title` — vacancy title
+- `slug` — URL slug; vacancy URL = `https://hirify.me/jobs/${slug}`
+- `has_applied` — `true` if already applied (authenticated); skip immediately if `true`
+- `salary_from`, `salary_to`, `salary_currency` — salary range (may be null)
+- `work_format` — array; must include `'remote'` or `'worldwide_remote'`
+- `created_at` — publication timestamp (ISO 8601)
+
+**Freshness filter:** `created_at` within the last 3 days (or profile setting).
+
+**Already-applied check:** `has_applied === true` on the list item — skip without fetching detail.
+
+**Full description (required for `filterFull`):** Description is NOT in the list response — only on the detail endpoint:
+```js
+const detail = await fetch(`${BASE}/api/vacancies/${vac.id}`, {credentials: 'include'}).then(r => r.json());
+const desc = detail.clear_text || detail.text || '';
+```
+Fetch detail only for items that pass the title-only filter pass in `filterFull`. Pass `null` as the `vac` argument (no HH employment classification on this platform).
+
+**Salary check:** `salary_from` or `salary_to` present → convert to USD. Both null → pass through (same rule as hh.ru: no salary stated = do not reject). Currency in `salary_currency` (e.g. `'USD'`, `'EUR'`, `'RUB'`).
+
+**Deduplication:** `has_applied === true` covers platform-level dedup. Additionally compare against local application history in memory by vacancy ID.
 
 ### Step 3: Telegram channel search
 
@@ -371,6 +433,47 @@ for (let i = startIdx; i < vacancies.length; i++) {
 
 **If application requires email / form** — add to "action required" list in report.
 
+**hirify.me-specific apply flow (use when vacancy host is hirify.me):**
+
+Read `hirify_profile_id` from `/areas/job-hunter-profile.md` before the loop. Never hardcode it.
+
+```js
+const hirifyProfileId = /* read from memory: hirify_profile_id */;
+
+// Step 1: fetch cover letter template (reference only — always write your own using Cover Letter Framework)
+const tplR = await fetch(`https://api.hirify.me/api/vacancy/${vacancyId}/cover-letter`, {credentials: 'include'});
+const tpl = tplR.ok ? await tplR.json() : null;
+// tpl.cover_letter — platform template; use as context, NOT as final letter
+
+// Step 2: compose 5-part cover letter using Cover Letter Framework (Bug 5)
+const coverLetter = /* your 5-part letter */;
+
+// Step 3: submit
+const applyR = await fetch('https://api.hirify.me/api/user/applications', {
+  method: 'POST',
+  credentials: 'include',
+  headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+  body: JSON.stringify({
+    vacancy_id: vacancyId,       // integer
+    profile_id: hirifyProfileId, // from memory (hirify_profile_id)
+    cover_letter: coverLetter,
+    source: 'direct'
+  })
+});
+```
+
+**Status codes for hirify.me:**
+- `200` or `201` → applied successfully → push to `window.__confirmedApplied`
+- `409` → already applied → push to "already applied" list
+- `422` → validation error; log body, skip vacancy
+- `429` → rate limit → stop loop immediately
+
+**Test assignment check on hirify.me:** No `has_test` field in API. Check `clear_text`: `/тестовое задание|test\s*task/i` — if match, push to `window.__testAssignments` and skip apply.
+
+**Vacancy URL for report:** `https://hirify.me/jobs/${vacancy.slug}`
+
+**Delay between hirify.me applications:** 1000ms minimum (platform is stricter than hh.ru).
+
 ### Cover Letter Framework
 
 **Bug 5 fix — mandatory 5-part structure (November 2026):**
@@ -449,7 +552,6 @@ Create an artifact — daily report. Write in the user's chosen language.
 
 ## 🧪 Test assignments — apply manually [N]
 // Bug 4 fix: output window.__testAssignments[] as a separate block
-// These vacancies were NOT auto-applied; user must handle them manually
 [For each entry in window.__testAssignments — one per block:]
 **[entry.title] — [entry.company]**
 📎 [entry.url]  ← full https:// URL
@@ -676,6 +778,8 @@ File `/areas/job-hunter-profile.md`:
 - Telegram channel list with date of last post and last check
 - Application history: vacancy ID, company, role, date, status
 - `last_run_date`: date of last Phase 3 run
+- `hirify_user_id`: hirify.me user ID (from `GET /api/profile` → `id`)
+- `hirify_profile_id`: hirify.me profile ID needed for every apply POST (from `GET /api/profile` → `profiles[0].id`)
 - `creative_profile`: medium, career stage, geography, what to find, deadline horizon (Phase 6)
 
 ---
@@ -721,3 +825,5 @@ File `/areas/job-hunter-profile.md`:
 **Test assignments — separate block.** `window.__testAssignments[]` must be output as a dedicated section in the report and in PushNotification summary with full `.url` links. (Bug 4 fix)
 
 **Creative opportunities — deadline horizon.** Default is 1 year. User sets it once in the creative profile interview (3 months / 6 months / 1 year / custom). Can be changed anytime: "change deadline horizon to 3 months". Save to `creative_profile.deadline_horizon` in memory.
+
+**Hirify.me profile IDs — read from memory, never re-fetch.** `hirify_profile_id` (from memory) is required in every `POST /api/user/applications` body. If missing from memory, run Phase 2c setup to fetch and store it. Vacancy URL is always `https://hirify.me/jobs/${vacancy.slug}`. Min delay between applications: 1000ms.
