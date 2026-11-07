@@ -111,7 +111,7 @@ Build a **personalized platform list** based on the profile. The list has two pa
 Priority logic (determined dynamically by profession + geo):
 
 **Level 1 — highest probability for this profession/geo:**
-- Russian-speaking IT → hh.ru + country HH domains (hh.kz, hh.uz, hh.ge, hh.am, cy.hh.ru, rabota.by), Habr Career, getmatch.ru, geekjob.ru, hirify.me
+- Russian-speaking IT → hh.ru + country HH domains (hh.kz, hh.uz, hh.ge, hh.am, cy.hh.ru, rabota.by), Habr Career, getmatch.ru, geekjob.ru, hirify.me, jobtoo.ru, talent-move.ru
 - International IT → LinkedIn, Indeed, Glassdoor, Wellfound, Remote.co, hirify.me
 - Design → Behance Jobs, Dribbble Jobs, LinkedIn
 - Marketing → LinkedIn, local job boards
@@ -140,7 +140,12 @@ Show the user the combined list (fixed + newly discovered) with a reason for eac
 
 ### Phase 2b: Telegram channel discovery
 
-Go to tgstat.ru and telemetr.io. Search using profession keywords.
+**Priority channels (always check on every run, regardless of discovery step):**
+- @jobs_it — IT job postings channel (https://t.me/jobs_it)
+- @runello_jobs_analyst — analyst-specific job postings (https://t.me/runello_jobs_analyst)
+- @foranalysts — analyst community with job postings
+
+For additional channel discovery: go to tgstat.ru and telemetr.io. Search using profession keywords.
 
 **Live channel criteria:** last post ≤ 7 days ago, ≥ 10 job posts/month, > 500 subscribers.
 **Skip if:** last post > 30 days, < 3 job posts/month, mostly spam or course ads.
@@ -175,6 +180,10 @@ For each platform in the saved list (priority order):
 **If browser hits a login page** — do NOT abort the run. Mark platform as "needs re-auth", continue with others, note in report.
 
 **hirify.me specifics:** Open https://hirify.me/, log in if needed, navigate to the personal vacancy feed / matches section. Extract matched vacancies. If the platform returns a 401 or requires manual login — mark as "needs re-auth" in report and continue.
+
+**jobtoo.ru specifics:** Open https://jobtoo.ru/, search by keyword «системный аналитик» with remote filter. Extract vacancy links and titles. Can also be contacted directly via vacancies posted there.
+
+**talent-move.ru specifics:** Open https://talent-move.ru/, search by keyword «системный аналитик» with remote filter. Extract vacancy links and titles. Can also be contacted directly via postings.
 
 **Step 2b — Web search for new platforms (every run)**
 
