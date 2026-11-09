@@ -20,6 +20,7 @@ These rules apply to EVERY run, EVERY document, EVERY cover letter:
 5. **All links must be clickable** — in documents use `[anchor text](https://full-url)` format. Never put bare URLs without hyperlink markup.
 6. **All links must be verified** — after composing any document with vacancy links, verify EVERY link by navigating to it in the browser (or HEAD request). If a site returns ERR_CONNECTION_RESET, 404, or «Не удается получить доступ» — remove that vacancy/line from the document entirely or mark clearly as «⚠️ сайт недоступен». A document with unverified links is not complete.
 7. **Cover letter — 5-part mandatory structure** — see Cover Letter Framework section. Total 7–10 sentences. No salary. No «бизнес-аналитик».
+8. **Telegram vacancies — always include direct message link** — for EVERY vacancy found in a Telegram channel, include the direct link to the specific message in format `https://t.me/channelname/messageID`. Without this link the vacancy row is incomplete. Never report a TG vacancy without the direct message link. To get the link: in web.telegram.org right-click (or long-press) the post → «Copy link» → result: `https://t.me/channelname/NNN`. If the link cannot be obtained — do NOT include that vacancy in the report.
 
 ---
 
@@ -287,6 +288,8 @@ Inspect the actual key names (they may differ from the documented API). If this 
 ### Step 3: Telegram channel search
 
 Open web.telegram.org. Open each channel. Review posts from the last 24h (or since last run). Extract job links. If channels mention other active channels — add to check list.
+
+**TG vacancy links — mandatory:** For every vacancy post found in any TG channel, copy the direct message link via right-click → «Copy link» in web.telegram.org (result: `https://t.me/channelname/NNN`). Include this link in the report for every vacancy. If the link cannot be obtained — do NOT include that vacancy in the report.
 
 **Fallback:** If web.telegram.org is unavailable or login fails — skip Telegram for this run, note in report, continue with other sources.
 
@@ -846,7 +849,7 @@ File `/areas/job-hunter-profile.md`:
 
 **User name.** Always fetch from `https://api.hh.ru/me` → `first_name`. Never invent or guess it.
 
-**Invitations.** Show ALL active invitations without filtering by date.
+**Invitations.** Show only invitations received within the last 2 months (cut-off: today minus 60 days). Add the invitation date to each entry. Sort by invitation date, most recent first. Skip invitations older than 2 months — do NOT include them in the report.
 
 **Salary check is mandatory before every apply.** `__checkSalaryPage()` must be called before every `__apply()`. Never use cached data. (Bug 2 fix)
 
