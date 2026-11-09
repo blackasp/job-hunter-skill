@@ -9,18 +9,71 @@ An automated, universal job search system. Works for any profession, any geograp
 
 ---
 
-## ⚠️ MANDATORY RULES (never override, never forget)
+## ⚠️ UNIVERSAL RULES (apply to ALL users, never override)
 
-These rules apply to EVERY run, EVERY document, EVERY cover letter:
+These rules apply regardless of the user's profile or onboarding status. They are about how the skill works, not about who is searching.
 
-1. **Language: always Russian** — all messages, reports, cover letters, error notes. No exceptions.
-2. **Never call the user a "бизнес-аналитик" or "business analyst"** — only «системный аналитик» or «фулстек-аналитик». Applies to cover letters, reports, and all messages.
-3. **Never mention salary in cover letters** — it leads to rejections. This is an absolute prohibition.
-4. **Remote РФ — always exclude** — vacancies that say «удалённо по России», «удаленно по России», «удалённая работа на территории РФ», «удалённо по РФ», «на территории РФ», «только в РФ», «резидентство РФ», «только граждане РФ», «только для граждан РФ», or list only Russian regions as location. The user does not live in Russia. **ANY mention of geographic restriction to Russia (even phrased softly as «на территории РФ» or «работа в РФ») must exclude the vacancy.**
-5. **All links must be clickable** — in documents use `[anchor text](https://full-url)` format. Never put bare URLs without hyperlink markup.
-6. **All links must be verified** — after composing any document with vacancy links, verify EVERY link by navigating to it in the browser (or HEAD request). If a site returns ERR_CONNECTION_RESET, 404, or «Не удается получить доступ» — remove that vacancy/line from the document entirely or mark clearly as «⚠️ сайт недоступен». A document with unverified links is not complete.
-7. **Cover letter — 5-part mandatory structure** — see Cover Letter Framework section. Total 7–10 sentences. No salary. No «бизнес-аналитик».
-8. **Telegram vacancies — always include direct message link** — for EVERY vacancy found in a Telegram channel, include the direct link to the specific message in format `https://t.me/channelname/messageID`. Without this link the vacancy row is incomplete. Never report a TG vacancy without the direct message link. To get the link: in web.telegram.org right-click (or long-press) the post → «Copy link» → result: `https://t.me/channelname/NNN`. If the link cannot be obtained — do NOT include that vacancy in the report.
+1. **Language: use the language the user chose in Phase 0** — all messages, reports, cover letters, error notes. No exceptions. For new users whose language is unknown, ask in both English and Russian (see Phase 0).
+2. **Never mention salary in cover letters** — it leads to rejections. This is an absolute prohibition.
+3. **All links must be clickable** — in documents use `[anchor text](https://full-url)` format. Never put bare URLs without hyperlink markup.
+4. **All links must be verified** — after composing any document with vacancy links, verify EVERY link by navigating to it in the browser (or HEAD request). If a site returns ERR_CONNECTION_RESET, 404, or «Не удается получить доступ» — remove that vacancy/line from the document entirely or mark clearly as «⚠️ сайт недоступен». A document with unverified links is not complete.
+5. **Cover letter — 5-part mandatory structure** — see Cover Letter Framework section. Total 7–10 sentences. No salary.
+6. **Telegram vacancies — always include direct message link** — for EVERY vacancy found in a Telegram channel, include the direct link to the specific message in format `https://t.me/channelname/messageID`. Without this link the vacancy row is incomplete. Never report a TG vacancy without the direct message link. To get the link: in web.telegram.org right-click (or long-press) the post → «Copy link» → result: `https://t.me/channelname/NNN`. If the link cannot be obtained — do NOT include that vacancy in the report.
+7. **Report format is locked** — the daily report structure defined in Step 7 must not be changed without explicit user instruction.
+8. **Apply personal filters strictly** — once a user has configured exclusion rules in their profile, apply them consistently to every vacancy, every run, without exception.
+
+> **Note on job titles in cover letters:** Use the user's own job title from their profile (`job_title`). Do not substitute or override it with a different title.
+
+---
+
+## ⚠️ PERSONAL SETTINGS (user-specific, stored in `/areas/job-hunter-profile.md`)
+
+Personal settings are NOT universal defaults. They are configured by each user during onboarding and can be updated at any time. The following settings are personal and must NEVER be applied to new users who haven't configured them:
+
+- **Profession / job title** — what roles to search for (e.g. системный аналитик, frontend developer, copywriter)
+- **Search keywords** — specific keywords for search queries
+- **Geography restrictions** — which countries/regions to include or exclude (e.g. «exclude Russia-only remote vacancies», «only EU», etc.)
+- **Exclusion blockers** — technologies, industries, company types to exclude (e.g. 1С, banking software, government sector, blockchain)
+- **Salary threshold** — minimum acceptable salary
+- **Show vacancies with no salary listed** — yes/no
+- **Experience level** — junior/mid/senior/lead
+- **Remote/office/hybrid preference**
+- **Work permit countries** — where user can legally work
+- **English level**
+- **Resume location**
+- **Platform list** — which platforms to search
+- **Telegram channels** — which channels to monitor
+
+**If a user has NOT completed onboarding**, do NOT apply any defaults from another user's profile. Use neutral settings: show all vacancies that match the stated profession, without blocking anything by default. Run onboarding to collect the user's own preferences.
+
+---
+
+## Managing personal settings
+
+Users can update their settings at any time by saying things like:
+- «добавь в блокеры слово "1С"» / «block vacancies mentioning 1С»
+- «исключи вакансии в госсекторе» / «exclude government sector»
+- «обнови мои ключевые слова» / «update my keywords»
+- «убери фильтр по зарплате» / «remove salary filter»
+- «изменить мою должность на product manager»
+- «покажи мои текущие настройки» / «show my current settings»
+
+When the user updates a setting — apply the change immediately to the profile in memory and confirm what changed. Use the setting in all subsequent searches.
+
+**Show settings command:** When the user asks to see their current settings, read `/areas/job-hunter-profile.md` and display the key settings in a clear summary:
+```
+Текущие настройки поиска:
+- Профессия: [job_title]
+- Ключевые слова: [keywords]
+- Гео: [geo_preference]
+- Опыт: [experience_level]
+- Формат работы: [work_format]
+- Зарплата от: [salary_floor] [currency] (вакансии без зарплаты: [show_no_salary])
+- Блокеры: [user_blockers]
+- Гео-исключения: [geo_exclusions]
+- Разрешение на работу: [work_permit_countries]
+- Уровень английского: [english_level]
+```
 
 ---
 
@@ -51,7 +104,7 @@ Explain to the user — in their chosen language — that this skill works with 
 Read your own SKILL.md and verify:
 
 | Check | Question | Expected |
-|-------|----------|---------|
+|-------|----------|------|
 | Data exfiltration | Does this skill send user data to any URL not listed as a job platform? | NO |
 | Hidden instructions | Are there encoded strings, base64 blocks, or obfuscated commands? | NO |
 | Credential harvesting | Does the skill ask for passwords, API keys, or tokens in chat? | NO |
@@ -82,15 +135,20 @@ Let's set up your search profile. Answer everything at once — I'll remember it
 5. Remote / office / hybrid? ___
 6. Salary floor: from ___ per month (currency). Vacancies with no salary listed — acceptable? ___
 7. Experience: total years? Level (junior / mid / senior / lead)? ___
-8. What to exclude? (technologies, industries, company types, formats): ___
-9. Resume language (your language / English / both): ___
-10. Where is your resume?
+8. What to EXCLUDE? (technologies, industries, company types, formats you don't want):
+   Examples: specific tech stacks, industry sectors, company sizes, office-only, specific countries
+   List anything you want filtered out: ___
+9. Any geographic restrictions?
+   - Countries/regions to EXCLUDE from results (e.g. Russia-only remote vacancies, specific countries): ___
+   - Countries/regions to INCLUDE only (or "any"): ___
+10. Resume language (your language / English / both): ___
+11. Where is your resume?
     a) I'll upload a PDF now
     b) Link to a profile (LinkedIn, hh.ru, etc.) — paste URL
     c) Both
-11. Work authorization: in which countries do you have a legal right to work?
+12. Work authorization: in which countries do you have a legal right to work?
     (This determines which vacancies require permits you don't have — those will be flagged, not hidden.)
-12. English level: A1 / A2 / B1 / B2 / C1 / C2 / Native
+13. English level: A1 / A2 / B1 / B2 / C1 / C2 / Native
     (Vacancies requiring a higher level than yours will be flagged in the report.)
 ```
 
@@ -98,7 +156,19 @@ After the user responds:
 - PDF → read contents, extract key skills, stack, experience
 - Profile link → open in browser, read, extract data
 - Save everything to `/areas/job-hunter-profile.md`, including:
-  - `work_permit_countries: [list]` — countries where user can legally work without sponsorship
+  - `job_title: [value]` — the user's own name for their profession
+  - `keywords: [list]` — search keywords
+  - `geo_preference: [value]` — where they work from
+  - `geo_exclusions: [list]` — geographic restrictions to exclude (e.g. `["RU-only remote"]`)
+  - `geo_inclusions: [list or "any"]` — geographic restrictions to include
+  - `work_format: [remote/office/hybrid]`
+  - `salary_floor: [amount]`
+  - `salary_currency: [currency]`
+  - `show_no_salary: [yes/no]`
+  - `experience_years: [N]`
+  - `experience_level: [junior/mid/senior/lead]`
+  - `user_blockers: [list]` — user's own exclusion list (technologies, industries, etc.)
+  - `work_permit_countries: [list]`
   - `english_level: [B1/B2/C1/etc]`
 
 ---
@@ -165,9 +235,9 @@ Priority logic (determined dynamically by profession + geo). Select the most rel
 
 **hirify.me specifics:** AI-powered job matching platform. Supports resume upload and automatic vacancy matching. Check the personal feed on each run (login required). URL: https://hirify.me/
 
-**jobtoo.ru specifics:** Open https://jobtoo.ru/, search by keyword from profile with remote filter.
+**jobtoo.ru specifics:** Open https://jobtoo.ru/, search by user's profession keywords (from profile `keywords`) with remote filter.
 
-**talent-move.ru specifics:** Open https://talent-move.ru/, search by keyword from profile with remote filter.
+**talent-move.ru specifics:** Open https://talent-move.ru/, search by user's profession keywords (from profile `keywords`) with remote filter.
 
 **ArbiHunter specifics:** Open https://arbihunter.com, search by profession keywords. Особенно актуален для digital, affiliate, AI-специалистов.
 
@@ -197,7 +267,7 @@ Show the user the combined list (fixed + newly discovered) with a reason for eac
 - @runello_jobs_analyst — analyst-specific job postings (https://t.me/runello_jobs_analyst)
 - @foranalysts — analyst community with job postings
 
-For additional channel discovery: go to tgstat.ru and telemetr.io. Search using profession keywords.
+For additional channel discovery: go to tgstat.ru and telemetr.io. Search using the user's profession keywords.
 
 **Live channel criteria:** last post ≤ 7 days ago, ≥ 10 job posts/month, > 500 subscribers.
 **Skip if:** last post > 30 days, < 3 job posts/month, mostly spam or course ads.
@@ -224,7 +294,7 @@ If the user says "update resume" or uploads a new file — process immediately, 
 
 For each platform in the saved list (priority order):
 1. Open in browser (using saved sessions)
-2. Apply search filters from profile
+2. Apply search filters from profile (use `keywords` from profile, not hardcoded values)
 3. Collect vacancies not older than [profile setting, default 3 days]
 4. Exclude already-seen (compare with history in memory)
 5. Add to shared pool
@@ -233,15 +303,15 @@ For each platform in the saved list (priority order):
 
 **hirify.me specifics:** Open https://hirify.me/, log in if needed, navigate to the personal vacancy feed / matches section. Extract matched vacancies. If the platform returns a 401 or requires manual login — mark as "needs re-auth" in report and continue.
 
-**jobtoo.ru specifics:** Open https://jobtoo.ru/, search by keyword from profile with remote filter. Extract vacancy links and titles.
+**jobtoo.ru specifics:** Open https://jobtoo.ru/, search by user's profession keywords (from profile `keywords`) with remote filter. Extract vacancy links and titles.
 
-**talent-move.ru specifics:** Open https://talent-move.ru/, search by keyword from profile with remote filter. Extract vacancy links and titles.
+**talent-move.ru specifics:** Open https://talent-move.ru/, search by user's profession keywords (from profile `keywords`) with remote filter. Extract vacancy links and titles.
 
 **Step 2b — Web search for new platforms (every run)**
 
 On EVERY daily run, do a quick web search to discover job boards and aggregators not yet in the saved list. This supplements — never replaces — the known platforms.
 
-Search queries to run (adapt keywords to the user's profession and language):
+Search queries to run (adapt keywords to the user's profession from profile `keywords` and `job_title`):
 ```
 "[profession] jobs remote [current year]" site:reddit.com OR site:news.ycombinator.com
 "[profession] job board [current year]"
@@ -268,10 +338,13 @@ Report new platforms found in a dedicated section: **"🆕 Новые платф
 - Publication date: `new Date(v.publicationTime?.$ || v.publicationTime?.['@timestamp'] * 1000)` — note: `@timestamp` is in seconds, not ms
 - Work schedule (remote check): `v['@workSchedule'] === 'remote'` (not `v.schedule.id`)
 
-**Search query:** Use NAME-syntax for title-only search to avoid false positives from job descriptions:
-`https://hh.ru/search/vacancy?text=NAME%3A(системный+аналитик+OR+бизнес+аналитик)&work_format=REMOTE`
+**Search query:** Use NAME-syntax and profile keywords for title-only search to avoid false positives from job descriptions. Build query from profile `keywords` dynamically:
+```js
+const kws = profile.keywords.map(k => encodeURIComponent(k)).join('+OR+');
+const url = `https://hh.ru/search/vacancy?text=NAME%3A(${kws})&work_format=REMOTE`;
+```
 
-**Salary check:** Only reject a vacancy for low salary if compensation is explicitly stated AND has a numeric value. Vacancies with no salary (`!c || (!c.from && !c.to)` or `c.noCompensation`) must NOT be rejected — pass them through. For currency conversion, support USD and EUR directly:
+**Salary check:** Only reject a vacancy for low salary if compensation is explicitly stated AND has a numeric value. Vacancies with no salary (`!c || (!c.from && !c.to)` or `c.noCompensation`) must NOT be rejected — pass them through (unless `show_no_salary: no` in profile). For currency conversion, support USD and EUR directly:
 `const usd = curr === 'USD' ? val : curr === 'EUR' ? val * 1.05 : val / (RATES[curr] || 90);`
 where `RATES = {RUR:90, RUB:90, KZT:500, BYN:3.2, BYR:3.2, UZS:12800}`
 
@@ -304,107 +377,130 @@ Capture direct vacancy links, not just company pages.
 
 ### Step 5: Filtering and ranking
 
-For each vacancy:
-1. **Exclusion filters** (from profile): remove by stack, industry, level
-2. **Geo check**: remove if not remote or wrong region; **Remote РФ ALWAYS excluded** — this includes ANY of: «удалённо по России», «удаленно по России», «удалённо по РФ», «на территории РФ», «на территории России», «работа в РФ», «только в РФ», «только в России», «резидентство РФ», «только граждане РФ», «только для граждан РФ», or only Russian cities listed. Check the **FULL TEXT** (title + description), not only structured fields like schedule/region. A vacancy saying "удалённо или гибрид" combined with «на территории РФ» anywhere in the description is RU-only and must be excluded.
-3. **Salary**: remove if below threshold (when listed); vacancies with no salary listed — keep
-4. **Freshness**: remove if older than profile limit
-5. **Deduplication**: remove if same company + role already in history
-6. **Work permit check**: if the vacancy explicitly requires authorization to work in a country where the user does NOT have a permit → flag in report with label ⚠️ Требуется разрешение на работу. Show in separate section.
-7. **English level check**: if the vacancy explicitly requires C1, C2, or "native/fluent English" AND the user's English level is below that threshold → flag with label ⚠️ Требуется уровень [C1/native]. Show in separate section.
+For each vacancy, apply filters in this order:
 
-After filtering — rank by relevance:
-- Key skills match from resume
-- Desired stack match
-- Presence of "nice-to-haves" that are in the resume
-- Salary level (when listed)
+#### 5a. Universal filters (apply to ALL users)
 
-#### ⚠️ Critical: two-pass filter — all blockers must check the full text
+1. **Role match** — does the vacancy title match the user's target profession (`job_title` + `keywords` from profile)?
+2. **Freshness** — remove if older than profile limit (default 3 days)
+3. **Deduplication** — remove if same company + role already in history
+4. **Work permit check** — if the vacancy explicitly requires authorization to work in a country where the user does NOT have a permit → flag in report with label ⚠️ Требуется разрешение на работу. Show in separate section.
+5. **English level check** — if the vacancy explicitly requires C1, C2, or "native/fluent English" AND the user's English level is below that threshold → flag with label ⚠️ Требуется уровень [C1/native]. Show in separate section.
 
-**Confirmed bug #1 (November 2026):** Applying to a vacancy that explicitly mentioned 1С in the description (but not in the title). Root cause: the title-only filter correctly blocked vacancies with 1С in the title, but the full-text filter (`filterFull`) was missing the 1С check for the description. The vacancy passed both passes and triggered an application.
+#### 5b. Personal filters (apply ONLY if configured in user profile)
 
-**Confirmed bug #2 (November 2026):** Applied to ПИК vacancy (hh.ru/vacancy/139020076) despite it containing «удалённая работа на территории РФ» in the description. Root cause: `filterFull` RU-only regex only checked for «удалённо по России» (the most common phrasing) but missed the softer variant «на территории РФ». Fix: expanded regex to catch all geographic-restriction variants (see RU-only check below).
+Read personal filters from `/areas/job-hunter-profile.md`:
+
+```js
+// Load personal settings from profile (pseudo-code)
+const profile = readProfile('/areas/job-hunter-profile.md');
+const geoExclusions = profile.geo_exclusions || [];    // e.g. ["RU-only"]
+const geoInclusions = profile.geo_inclusions || "any"; // e.g. "any" or ["EU", "CIS"]
+const userBlockers  = profile.user_blockers  || [];    // e.g. ["1С", "биллинг", "госсектор"]
+const salaryFloor   = profile.salary_floor   || 0;
+const showNoSalary  = profile.show_no_salary !== "no"; // default: show
+```
+
+Apply each filter ONLY if its value is set and non-empty:
+
+**Geo exclusions** (apply if `geoExclusions` is non-empty):
+```js
+// Example: if "RU-only" is in geoExclusions, check for Russia-only patterns:
+if (geoExclusions.includes("RU-only")) {
+  if (/удалённо\s+по\s+Росси|удаленно\s+по\s+Росси|удалённо\s+по\s+РФ|удаленно\s+по\s+РФ|на\s+территории\s+РФ|на\s+территории\s+России|работ[а-яё]*\s+в\s+РФ|только\s+в\s+РФ|только\s+в\s+России|резидентств[а-яё]*\s+РФ|только\s+для\s+граждан\s+РФ|только\s+граждан[а-яё]*\s+РФ/i.test(full))
+    return { pass: false, reason: 'RU-only' };
+}
+```
+
+**User blockers** (apply if `userBlockers` is non-empty):
+```js
+for (const blocker of userBlockers) {
+  const re = new RegExp('(^|[\\s,;(])' + blocker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([\\s,;.)]|$)', 'i');
+  if (re.test(full))
+    return { pass: false, reason: `user-blocker:${blocker}` };
+}
+```
+
+**Salary filter** (apply if `salaryFloor > 0`):
+```js
+if (salaryFloor > 0 && compensationStated && compensationValueUSD < salaryFloor) {
+  return { pass: false, reason: 'salary-below-threshold' };
+}
+if (!showNoSalary && !compensationStated) {
+  return { pass: false, reason: 'no-salary-listed' };
+}
+```
+
+#### Two-pass filter pattern for hh.ru
 
 **Rule:** Every exclusion filter from the user profile must be applied to the **combined full text** (title + description), not to the title alone. The title-only pass is only an optimisation to skip vacancies that obviously don't match the target role; it is not a substitute for checking the description.
-
-**Two-pass pattern for hh.ru:**
 
 ```js
 window.W = s => new RegExp('(^|[^а-яёa-z0-9])(?:' + s + ')([^а-яёa-z0-9]|$)', 'i');
 
-window.filterFull = (name, desc, vac) => {
+window.filterFull = (name, desc, vac, profile) => {
   // Bug 1 fix: check HH employment classification BEFORE regex filtering
-  // vac.employment?.id === 'probation' means HH classified this as an internship
   if (vac && vac.employment?.id === 'probation')
     return { pass: false, reason: 'probation-hh' };
 
   const titleOnly = (name || '').replace(/\s+/g, ' ').trim();
   const full = (titleOnly + ' ' + (desc || '')).replace(/\s+/g, ' ');
 
-  // Pass 1 — title only (role match + junior/intern check)
-  if (!/системный аналитик|system analyst|business analyst|technical business analyst|solutions analyst|integration analyst/i.test(titleOnly))
-    return { pass: false, reason: 'not-SA-BA' };
-  // Bug 1 fix: added стажёром|ученик to Russian intern regex; added apprentice to W()-pattern
-  if (/стажировк|стажер|стажёр|стажёром|ученик|ищем\s+стаж/i.test(titleOnly))
-    return { pass: false, reason: 'intern' };
-  if (W('junior|intern|trainee|apprentice').test(titleOnly))
-    return { pass: false, reason: 'junior' };
-  if (/младший\s+аналитик/i.test(titleOnly))
-    return { pass: false, reason: 'junior' };
-  if (W('bi').test(titleOnly))
-    return { pass: false, reason: 'BI-title' };
+  // ── Pass 1: title-only checks (universal: role match + seniority) ──────────
+  // Build role match regex from profile keywords
+  const rolePattern = (profile.keywords || []).concat(profile.job_title ? [profile.job_title] : [])
+    .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  if (rolePattern && !new RegExp(rolePattern, 'i').test(titleOnly))
+    return { pass: false, reason: 'role-mismatch' };
 
-  // Pass 2 — full text (title + description): ALL other blockers
-  if (/аналитик[а-яё]*\s+данных|data\s+analyst|data\s+scientist|data\s+engineer|power\s*bi|qlik|visiology|дашборд/i.test(full))
-    return { pass: false, reason: 'data-bi' };
-  if (/1[\s]?[сc](?![а-яёa-z])/i.test(full))
-    return { pass: false, reason: '1C' };
-  if (/биллинг|billing/i.test(full))
-    return { pass: false, reason: 'billing' };
-  if (/\bdwh\b|data[\s-]?lake|data[\s-]?warehouse|greenplum/i.test(full))
-    return { pass: false, reason: 'DWH' };
-  if (/camunda|elma\b|bpmsoft|creatio\b|битрикс\s*24|directum[\s-]?rx|ms[\s-]dynamics|microsoft[\s-]dynamics|navision|siebel|\bsap\b/i.test(full))
-    return { pass: false, reason: 'unknown-soft' };
-  if (/diasoft|диасофт|colvir|автоматизирован[а-яё]*\s+банковск/i.test(full))
-    return { pass: false, reason: 'banking-soft' };
-  if (W('абс|abs|цфт|ибсо').test(full))
-    return { pass: false, reason: 'banking-box' };
-  if (/информационн[а-яё]*\s+безопасн|кибербезопасн|cyber[\s-]?security|appsec|devsecops|пентест|уязвимост|антивирус|\bngfw\b|\bфстэк\b|криптограф/i.test(full))
-    return { pass: false, reason: 'infosec' };
-  if (/сетев[а-яё]*\s+(технолог|оборудован|инфраструктур|протокол)|wi-?fi|маршрутизатор|коммутатор|систем[а-яё]*\s+хранения\s+данных|серверн[а-яё]*\s+(оборудован|инфраструктур)|виртуализац|гипервизор|дата-?центр|прошивк|firmware|асу\s*тп|scada|телеметри[а-яё]*/i.test(full))
-    return { pass: false, reason: 'network-infra' };
-  if (W('иб|soc|siem|dlp|sdn|схд|цод').test(full))
-    return { pass: false, reason: 'infosec-word' };
-  if (/блокчейн|blockchain|web\s?3|смарт[\s-]?контракт|smart\s+contract|ethereum|solidity|hyperledger|криптовалют|криптоактив|криптобирж|токенизац/i.test(full))
-    return { pass: false, reason: 'blockchain' };
-  if (W('dlt|nft|цфа').test(full))
-    return { pass: false, reason: 'blockchain-word' };
-  if (W('гост|гостов|еспд').test(full))
-    return { pass: false, reason: 'gost' };
-  if (/РД\s?50-34/i.test(full))
-    return { pass: false, reason: 'gost-rd' };
-  if (/госсектор|гос[а-яё]*\s*орган|государственн[а-яё]*\s+(заказчик|учрежден|структур|организац)|правительств|министерств|ведомств|муниципальн|госуслуг|госзакуп|public\s+sector|e-?government/i.test(full))
-    return { pass: false, reason: 'gov' };
-  if (W('фгуп|гку|гбу|b2g').test(full))
-    return { pass: false, reason: 'gov-word' };
-  if (/(^|\D)(44|223)[\s-]?фз/i.test(full))
-    return { pass: false, reason: 'gov-law' };
-  if (/командировк|выезд[а-яё]*\s+к\s+клиент|разъездн|только\s+москв/i.test(full))
-    return { pass: false, reason: 'travel' };
-  // Bug 2 fix: added «на территории РФ», «удалённо по РФ», «только в РФ», «работа в РФ» variants
-  // Confirmed case: ПИК vacancy used «удалённая работа на территории РФ» — was not caught by previous regex
-  if (/удалённо\s+по\s+Росси|удаленно\s+по\s+Росси|удалённо\s+по\s+РФ|удаленно\s+по\s+РФ|на\s+территории\s+РФ|на\s+территории\s+России|работ[а-яё]*\s+в\s+РФ|только\s+в\s+РФ|только\s+в\s+России|резидентств[а-яё]*\s+РФ|только\s+для\s+граждан\s+РФ|только\s+граждан[а-яё]*\s+РФ/i.test(full))
-    return { pass: false, reason: 'RU-only' };
-  if (/\bсбербанк|\bsberbank/i.test(full))
-    return { pass: false, reason: 'sber' };
+  // Junior/intern check (universal — applies when experience_level is mid/senior/lead)
+  if (profile.experience_level && profile.experience_level !== 'junior') {
+    if (/стажировк|стажер|стажёр|стажёром|ученик|ищем\s+стаж/i.test(titleOnly))
+      return { pass: false, reason: 'intern' };
+    if (W('junior|intern|trainee|apprentice').test(titleOnly))
+      return { pass: false, reason: 'junior' };
+    if (/младший\s+аналитик/i.test(titleOnly))
+      return { pass: false, reason: 'junior' };
+  }
+
+  // ── Pass 2: full-text checks (personal filters from profile) ─────────────
+  const geoExclusions = profile.geo_exclusions || [];
+  const userBlockers  = profile.user_blockers  || [];
+
+  // Geo exclusions (Bug 2 fix: covers all RU-only phrasings)
+  if (geoExclusions.includes('RU-only') || geoExclusions.includes('ru-only')) {
+    if (/удалённо\s+по\s+Росси|удаленно\s+по\s+Росси|удалённо\s+по\s+РФ|удаленно\s+по\s+РФ|на\s+территории\s+РФ|на\s+территории\s+России|работ[а-яё]*\s+в\s+РФ|только\s+в\s+РФ|только\s+в\s+России|резидентств[а-яё]*\s+РФ|только\s+для\s+граждан\s+РФ|только\s+граждан[а-яё]*\s+РФ/i.test(full))
+      return { pass: false, reason: 'RU-only' };
+  }
+
+  // User blockers — applied to full text (Bug 1 fix: check description, not just title)
+  for (const blocker of userBlockers) {
+    const escaped = blocker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp('(^|[\\s,;([\\]])' + escaped + '([\\s,;.[\\]]|$)', 'i').test(full))
+      return { pass: false, reason: `user-blocker:${blocker}` };
+  }
 
   return { pass: true };
 };
 ```
 
-**Initialise `filterFull` once** at the top of each browser session, before the apply loop. The same function covers both hh.ru and all other platforms — just pass the vacancy title, description text, and vacancy object as arguments.
+**Initialise `filterFull` once** at the top of each browser session, before the apply loop. The same function covers both hh.ru and all other platforms — just pass the vacancy title, description text, vacancy object, and profile as arguments.
 
-**False positives — do NOT block** (confirmed safe): "нефункциональные требования (ИБ, нагрузка)"; "понимание основ ИБ" in the "желательно" section; "консультирование junior-аналитиков"; "дашборды" listed as one of many tasks; "государственные структуры" in a client-list context; "командировки" appearing in a product name; "тестовое задание".
+#### Confirmed bugs and fixes
+
+**Confirmed bug #1 (November 2026):** Applied to a vacancy with a blocked term in the description but not the title.
+**Root cause:** Title-only filter missed it. Full-text filter was not checking the user's configured blockers.
+**Fix:** Always apply ALL user_blockers from profile to full text (title + description), not title alone.
+
+**Confirmed bug #2 (November 2026):** Applied to ПИК vacancy with «удалённая работа на территории РФ» in description.
+**Root cause:** RU-only regex was incomplete, missed softer phrasings.
+**Fix:** Expanded RU-only regex to cover all geographic-restriction variants (see above). Applied only when RU-only is in profile.geo_exclusions.
+
+After filtering — rank by relevance:
+- Key skills match from resume
+- Desired stack match
+- Presence of "nice-to-haves" that are in the resume
+- Salary level (when listed)
 
 ### Step 6: Auto-applications
 
@@ -486,7 +582,6 @@ for (let i = startIdx; i < vacancies.length; i++) {
    - **Jitter:** add extra 0–3 seconds (random) on top — total 3–8 seconds per application
    - **After every 5 applications:** pause 30–60 seconds (random)
    - **After every 20 applications:** pause 3–5 minutes (random)
-   This mimics human behavior and prevents captcha / account block.
 8. Record in `window.__confirmedApplied` as `{id, title, company, url}` (see Bug 3 fix above)
 
 **Application counting:** Only count vacancies where the submit returned HTTP 200. Status 403 (already applied) goes to "уже подавали" list. Status 429 (rate limit) → stop the loop immediately. Any other error → "failed" list. Never increment the counter for failed or blocked requests.
@@ -510,29 +605,26 @@ Address the team or company by name. If the vacancy mentions a hiring manager's 
 Example: *"Добрый день, команда [Company]!"* / *"Hello, [Company] team!"*
 
 **Part 2 — Self-presentation** (1 sentence)
-One sentence stating the candidate's specific specialization relevant to this vacancy. Must NOT be generic — must name the specific role or domain. **NEVER use «бизнес-аналитик» or «business analyst» — only «системный аналитик» or «фулстек-аналитик».**
-Example: *"Я — системный аналитик с 6+ летним опытом интеграций и API в B2B SaaS."*
+One sentence stating the candidate's specific specialization relevant to this vacancy. Must NOT be generic — must name the specific role or domain. Use the user's own job title from their profile (`job_title`), not an assumed generic one.
 
 **Part 3 — Relevant experience** (2–3 sentences)
 Only experience that matches THIS vacancy's requirements. Pick 2–3 concrete achievements or skills from the resume that overlap with the vacancy. Do NOT copy-paste from resume wholesale.
-Example: *"В Handysay я выстраивала аналитику с нуля — от ТЗ на интеграции до A/B-тестов на 50k пользователей."*
 
 **Part 4 — Vacancy comparison** (2–3 sentences)
-Explicit point-by-point mapping to the vacancy requirements. Reference something specific from the vacancy description. Use phrasing like: *«Ваши требования к X — именно то, чем я занималась в Y»*
+Explicit point-by-point mapping to the vacancy requirements. Reference something specific from the vacancy description.
 
 **Part 5 — Closing** (1 sentence)
 Express readiness to discuss the vacancy in more detail.
-Example: *"Буду рада рассказать подробнее на встрече."*
 
 **Total length: 7–10 sentences. No more, no less.**
 
 **Absolute prohibitions in cover letters:**
 - ❌ Never mention salary
-- ❌ Never call the user «бизнес-аналитик» or «business analyst» — only «системный аналитик» / «фулстек-аналитик»
 - ❌ Never restate the resume in paragraph form
 - ❌ Never use generic openers, never start mid-sentence
 - ❌ Never apologize for gaps or missing skills
 - ❌ Never skip any of the 5 parts
+- ❌ Do NOT use a job title that differs from what the user has in their profile
 
 **Before writing:** extract from the vacancy — company name, hiring manager name (if any), product/service, top 2–3 required skills. Cross-reference with resume. Write all 5 parts in order.
 
@@ -573,28 +665,23 @@ Example: *"Буду рада рассказать подробнее на вст
 
 ## Новые платформы — результаты поиска
 Таблица: Платформа | Вакансия (ссылка) | Компания | Статус/Действие
-- Вакансия — кликабельная ссылка
-- Статус/Действие — «Отклик отправлен», «Требуется регистрация», «Написано письмо», «Нет подходящих» и т.д.
 
 ## Что сделать вручную
-Нумерованный список. Каждый пункт содержит кликабельную ссылку на вакансию/платформу и точное описание действия.
+Нумерованный список с кликабельными ссылками и точным описанием действия.
 
 ## Список новых платформ этого запуска
 Таблица: Платформа | URL | Найдено вакансий | Добавлена в профиль?
-(Перечислить ТОЛЬКО платформы, где в этом запуске найдена хотя бы одна подходящая вакансия.
-После создания отчёта — автоматически добавить эти платформы в список известных платформ в /areas/job-hunter-profile.md)
 ```
 
 **Rules for the document:**
 
-1. **ALL links MUST be clickable** — format: `[anchor text](https://full-url)`. Never bare URLs. Applies to ALL sections — tables, lists, everywhere. No exceptions.
-2. **Verify ALL links BEFORE finalizing** — after writing the document, navigate to each link in the browser. If a site returns ERR_CONNECTION_RESET, 404, or «Не удается получить доступ» — remove that row/item from the document or replace the link with «⚠️ сайт недоступен». A document with unverified links is NOT complete.
-3. **Hirify short URL format** — use `https://hirify.me/jobs/[ID]` (no slug). These return HTTP 200.
-4. **External career sites** — verify by navigating in browser (not `fetch()` — CORS will block). If unavailable, remove link.
-5. **Document title** — in Russian, with the date in Russian format: «Отчёт по поиску работы — 9 ноября 2026».
-6. **Link verification** — hh.ru and Hirify links: verify via fetch(url, {method:'HEAD'}) in browser console. External sites: navigate directly in a browser tab.
-7. **New platforms auto-save** — after the report is finalized, add every platform from «Список новых платформ этого запуска» to the known platforms list in `/areas/job-hunter-profile.md` automatically.
-8. **Format is immutable** — do NOT rearrange sections, rename columns, merge sections, or add/remove sections without explicit user instruction. The format above is the contract.
+1. **ALL links MUST be clickable** — format: `[anchor text](https://full-url)`. Never bare URLs.
+2. **Verify ALL links BEFORE finalizing** — navigate to each link. Remove or mark as «⚠️ сайт недоступен» if unavailable.
+3. **Hirify short URL format** — use `https://hirify.me/jobs/[ID]` (no slug).
+4. **External career sites** — verify by navigating in browser (not `fetch()` — CORS will block).
+5. **Document title** — in the user's chosen language, with the date.
+6. **New platforms auto-save** — after the report is finalized, add every new platform to `/areas/job-hunter-profile.md`.
+7. **Format is immutable** — do NOT rearrange sections, rename columns, merge or add sections without explicit user instruction.
 
 ---
 
@@ -613,8 +700,8 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 ## Phase 5: Source expansion
 
 **Two modes:**
-- **Quick scan (every daily run):** runs as Step 2b inside Phase 3 — a lightweight web search for new platforms, described there.
-- **Deep scan (weekly or on request):** full procedure below. Runs automatically once a week, or when user says "find new channels / platforms".
+- **Quick scan (every daily run):** runs as Step 2b inside Phase 3.
+- **Deep scan (weekly or on request):** full procedure below.
 
 ### Deep scan procedure
 
@@ -628,105 +715,49 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
   "remote [profession] jobs site list [year]"
   "where to find [profession] jobs [year]"
   ```
-  — search in BOTH the user's language and English
-- For each new platform found: open it, check if relevant vacancies exist, verify language requirement compatibility, check if work permit is required for listed vacancies
+  — search in BOTH the user's language and English; use profession keywords from profile
+- For each new platform found: open it, check if relevant vacancies exist, verify language requirement compatibility
 - Update saved platform list in profile
 - Include as separate block in next report: «Источники обновлены: добавлено N, удалено N, проверено N»
 
-**Key rule:** Never limit discovery to a fixed predefined list. The internet always has niche platforms, new aggregators, and profession-specific boards that don't appear in any hardcoded list. Discover them fresh every week.
+**Key rule:** Never limit discovery to a fixed predefined list. Discover fresh niche platforms every week.
 
 ---
 
 ## Phase 6: Creative opportunities (on request)
 
-A separate mode for artists, designers, and creative practitioners. Runs independently from the job search — does not affect the daily run, application history, or profile.
+A separate mode for artists, designers, and creative practitioners. Runs independently from the job search.
 
 **Trigger phrases (any language):**
 - "find open calls", "find residencies", "find art fairs", "find galleries for my work"
 - "найди опен-коллы", "найди резиденции", "найди ярмарки", "найди галереи под мои работы"
-- "find opportunities for [medium]", "where can I submit my work", "find calls for digital art / AI art / light installations"
 
-**Before searching:** ask the user (once, save to profile):
-1. Medium / format: digital art, AI art, painting, photography, light/sound installation, video, mixed media — or combination
+**Before searching:** ask the user (once, save to profile as `creative_profile`):
+1. Medium / format
 2. Career stage: emerging / mid-career / established
-3. Geography: open to international / Europe only / specific countries
-4. What to find (they can pick several):
-   - Open calls & competitions
-   - Residencies
-   - Art fairs (to apply as exhibitor)
-   - Galleries (to approach for representation or exhibition)
-5. Deadline horizon: how far ahead to look? Options: 3 months / 6 months / 1 year / custom. **Default: 1 year.** User can change anytime by saying "update my creative profile" or "change deadline horizon".
-
-Save answers as `creative_profile` in `/areas/job-hunter-profile.md`. On subsequent runs — skip the interview, use saved profile.
-
----
+3. Geography
+4. What to find: open calls, residencies, art fairs, galleries
+5. Deadline horizon (default: 1 year)
 
 ### 6a: Open calls & competitions
 
-Search sources:
-- **Aggregators:** e-flux.com/announcements, artrabbit.com, callforentry.org (CaFÉ), submittable.com, transartists.org, resartis.org
-- **Medium-specific:** Ars Electronica (digital/AI), FILE Festival, ISEA, Prix Net Art — for digital/AI/interactive work
-- **Web search:** `"open call" [medium] [year] deadline site:e-flux.com OR site:artrabbit.com`
+Search sources: e-flux.com/announcements, artrabbit.com, callforentry.org, submittable.com, transartists.org, resartis.org
 
-**Rules:**
-- Deadline must be in the future (today or later) — never show expired calls
-- Use the deadline horizon from `creative_profile` (default: 1 year ahead)
-- Rolling / ongoing deadlines: include and label clearly as "rolling"
-- Verify each link: must open without error, lead to the current cycle (not a past year's closed call)
-- If direct fetch is blocked → use secondary source (aggregator page, cached version), note in report
-
----
+Rules: deadline must be in the future; verify each link.
 
 ### 6b: Residencies
 
 Search sources: resartis.org, transartists.org, artistcommunities.org, e-flux.com/announcements
 
-Filter by:
-- Medium compatibility (a residency for painters ≠ a residency for digital/AI art)
-- Geography (if user specified)
-- Duration (note it — some are 1 week, some 3 months)
-- Whether stipend / accommodation is provided — flag this
-
----
-
 ### 6c: Art fairs (exhibitor applications)
 
-Art fairs where artists or galleries can apply to exhibit:
-
-**Major international:** Frieze, Art Basel, NADA, Untitled Art Fair, Liste, CHART, Future Fair
-**Digital/new media focused:** Ars Electronica Festival, transmediale, ISEA, Mutek
-**Emerging artist fairs:** Supermarket Art Fair, VOLTA, Paper Positions
-
-Search for: `"[fair name] [year] application" OR "open application [fair name]"`
-
-**Rules:**
-- Application deadline must be in the future
-- Distinguish: some fairs accept galleries only, some accept artists directly — note which
-- Include application fee if mentioned
-- Link must go to the application page, not the fair's homepage
-
----
+Major: Frieze, Art Basel, NADA, Untitled Art Fair, Liste, CHART, Future Fair
+Digital/new media: Ars Electronica Festival, transmediale, ISEA, Mutek
+Emerging: Supermarket Art Fair, VOLTA, Paper Positions
 
 ### 6d: Galleries (for representation or exhibition proposals)
 
-**Only suggest galleries that match the user's medium.** A gallery that shows oil paintings is irrelevant for AI/digital art.
-
-**For digital / AI art / new media:**
-Search: `"digital art gallery" open submissions [year]`, `"AI art" gallery representation`, `"new media art" gallery call`
-
-Known galleries in this space: Bitforms Gallery (NY), Gazelli Art House (London/Baku), Nome Gallery (Berlin), Carroll/Fletcher (London), Panke Gallery (Berlin), ADM Gallery (Singapore), DAM Gallery (Berlin/Frankfurt)
-
-**For light/sound/installation (large-format work):**
-Requires venues with technical capacity (high ceilings, blackout, AV infrastructure). Search: `"immersive art" venue open call`, `"light installation" residency`, `"sound installation" exhibition proposal`
-
-**Output per gallery:**
-- Name + city
-- What they show (medium)
-- Whether they accept unsolicited submissions (and how)
-- Direct link to submissions page or contact
-- Note if submissions are currently open vs. ongoing
-
----
+Match galleries to the user's medium. Known digital/AI art galleries: Bitforms Gallery (NY), Gazelli Art House (London/Baku), Nome Gallery (Berlin), Carroll/Fletcher (London), Panke Gallery (Berlin), ADM Gallery (Singapore), DAM Gallery (Berlin/Frankfurt)
 
 ### 6e: Report format for creative opportunities
 
@@ -736,58 +767,16 @@ Create a separate Claude Docs document (never mix with job search report):
 # 🎨 Творческие возможности — [дата]
 
 ## 📊 Итого
-- Опен-коллы: N (дедлайны до [горизонт из creative_profile, по умолчанию 1 год])
+- Опен-коллы: N
 - Резиденции: N
 - Арт-ярмарки (открытые заявки): N
 - Галереи (принимают заявки): N
-- Удалено (истёк дедлайн / ссылка не работает): N
-
----
 
 ## 📋 Опен-коллы и конкурсы [N]
-Для каждого — отдельный блок:
-**[Название]**
-🔗 [ссылка на страницу подачи заявки]
-📅 Дедлайн: [дата] / Rolling
-💰 Взнос: [сумма или «бесплатно»]
-📍 [место или «международный / онлайн»]
-📝 [1 предложение о том, что ищут]
-
----
-
 ## 🏡 Резиденции [N]
-Для каждой:
-**[Название] — [место]**
-🔗 [ссылка]
-📅 Дедлайн: [дата] / Rolling
-⏱ Длительность: [недели/месяцы]
-💰 Стипендия / жильё: [да/нет/частично]
-📝 [соответствие медиуму + 1 предложение]
-
----
-
 ## 🖼 Арт-ярмарки — открытые заявки [N]
-Для каждой:
-**[Название ярмарки] — [город, год]**
-🔗 [ссылка на страницу заявки]
-📅 Дедлайн заявки: [дата]
-👤 Принимают: художников напрямую / только галереи / и тех и других
-💰 Стоимость стенда: [если указана]
-
----
-
 ## 🏛 Галереи — принимают заявки [N]
-Для каждой:
-**[Название галереи] — [город]**
-🔗 [страница для заявок]
-📬 Как подать: [email / онлайн-форма / опен-колл]
-🎨 Фокус: [что показывают]
-📝 [1 предложение о соответствии]
-
----
-
 ## ⚠️ Примечания
-(Ссылки без верификации, ярмарки только для галерей, опен-коллы за пределами горизонта и т.д.)
 ```
 
 ---
@@ -797,7 +786,18 @@ Create a separate Claude Docs document (never mix with job search report):
 File `/areas/job-hunter-profile.md`:
 - `language`: chosen language (set in Phase 0)
 - `security_checked: true` (set after Phase 0 completes)
-- User profile: profession, keywords, geo, remote preference, salary threshold, experience level, exclusions
+- `job_title`: user's profession / job title
+- `keywords`: search keywords list
+- `geo_preference`: where user works from
+- `geo_exclusions`: list of geographic restrictions to exclude (e.g. `["RU-only"]`)
+- `geo_inclusions`: geographic restrictions to include (or "any")
+- `work_format`: remote/office/hybrid
+- `salary_floor`: minimum salary
+- `salary_currency`: currency for salary threshold
+- `show_no_salary`: whether to show vacancies without stated salary (yes/no)
+- `experience_years`: total years of experience
+- `experience_level`: junior/mid/senior/lead
+- `user_blockers`: list of terms/industries/technologies the user wants excluded
 - `work_permit_countries`: list of countries where user can legally work without sponsorship
 - `english_level`: user's English level (A1–C2)
 - Resume: file path / link / hash of last version / extracted skills and stack
@@ -811,52 +811,55 @@ File `/areas/job-hunter-profile.md`:
 
 ## Key principles
 
-**🔴 MANDATORY RULES (highest priority, never override):**
-- **Язык — всегда русский.** Все сообщения, отчёты, кавер-леттеры, технические заметки.
-- **Никогда не называть пользователя «бизнес-аналитик».** Только «системный аналитик» или «фулстек-аналитик».
-- **Зарплату в кавер-леттерах не упоминать.** Абсолютный запрет.
-- **Remote РФ — всегда исключать.** Пользователь не живёт в России.
-- **Все ссылки в документе — кликабельные.** Формат: `[текст](url)`. Без этого документ не считается завершённым.
-- **Все ссылки — проверены.** Недоступные сайты (ERR_CONNECTION_RESET, 404) — строку удалить или пометить `⚠️ сайт недоступен`.
+**🔴 UNIVERSAL RULES (apply regardless of profile):**
+- **Language — use the user's chosen language.** Set in Phase 0. Used everywhere.
+- **Never mention salary in cover letters.** Absolute prohibition.
+- **All links must be clickable.** Format: `[text](url)`. Without this the document is not complete.
+- **All links must be verified.** Unavailable sites — remove or mark `⚠️ сайт недоступен`.
+- **Cover letter — mandatory 5-part structure.** (1) Greeting → (2) Self-presentation → (3) Relevant experience → (4) Vacancy comparison → (5) Closing. Total 7–10 sentences. Never skip any part.
+- **Report — Claude Docs document.** Not in chat, not HTML artifact. Direct clickable links to every vacancy.
+- **Apply personal filters strictly.** Once configured, apply consistently to every vacancy, every run.
 
-**Don't stop on minor errors.** One platform down → continue with others, note in report. Never abort the full run.
+**🟡 PERSONAL SETTINGS (apply ONLY after onboarding, from profile):**
+- **Job title / profession** — from `profile.job_title`. Used in search queries and cover letters.
+- **Search keywords** — from `profile.keywords`. Used in platform search queries.
+- **Geographic exclusions** — from `profile.geo_exclusions`. Applied in filter pass 2.
+- **User blockers** — from `profile.user_blockers`. Applied in filter pass 2 to full text.
+- **Salary threshold** — from `profile.salary_floor`. Applied only if set and > 0.
+- **Experience level** — from `profile.experience_level`. Affects junior/intern filtering.
+
+**New users start with no personal filters.** Everything in the yellow category is empty until the user completes onboarding. Do not use another user's values as defaults.
+
+**Don't stop on minor errors.** One platform down → continue with others, note in report.
 
 **Permissions — once only.** Full domain list collected at onboarding, bulk-added by user. Never re-request.
 
-**Cover letters — mandatory 5-part structure (Bug 5 fix).** (1) Greeting → (2) Self-presentation → (3) Relevant experience → (4) Vacancy comparison → (5) Closing. Total 7–10 sentences. Every claim verifiable against resume. Language matches vacancy. Never skip any part. Never mention salary. Never say «бизнес-аналитик».
-
-**Report — Claude Docs document.** Not in chat, not HTML artifact. Direct clickable links to every vacancy in every section. Each vacancy on its own line — never comma-separated. URL must be a full `https://` address in `[text](url)` format.
-
-**Bug 3 fix reminder:** Always iterate `window.__confirmedApplied[]` and output each entry's `.title`, `.company`, and `.url` as a separate block. Using `.length` alone is a bug.
+**Bug 3 fix reminder:** Always iterate `window.__confirmedApplied[]` with `.title`, `.company`, `.url`. Using `.length` alone is a bug.
 
 **Bug 4 fix reminder:** Always output `window.__testAssignments[]` as a dedicated section with full `.url` links.
 
 **Resume — live.** Check hash on every run. If changed → re-read and apply.
 
-**Language — consistent.** Set once in Phase 0. Used everywhere: messages, onboarding, reports, cover letters, error notes.
-
-**Auto-apply.** No per-run limit — apply to ALL vacancies that pass filters. Confirm before sending. Count ONLY confirmed HTTP 200 responses. Use progressive delays between applications to avoid captcha (3–8s per apply, 30–60s after every 5, 3–5min after every 20).
+**Auto-apply.** Confirm before sending. Count ONLY confirmed HTTP 200 responses. Use progressive delays (3–8s per apply, 30–60s after every 5, 3–5min after every 20).
 
 **Cold start detection.** If last run > 14 days ago → verify auth and channel activity before searching.
 
 **Captcha = full stop.** Stop immediately → move remaining to "требует действия" → notify user.
 
-**Network errors.** Wrap every fetch in try/catch. On error: increment failed counter, wait 1 second, continue to next vacancy.
-
-**Browser state.** Verify in-browser state variables exist before the application loop. If lost → re-collect from scratch.
+**Network errors.** Wrap every fetch in try/catch. On error: increment failed counter, wait 1 second, continue.
 
 **Always notify on failure.** If the run is interrupted → send PushNotification.
 
 **User name.** Always fetch from `https://api.hh.ru/me` → `first_name`. Never invent or guess it.
 
-**Invitations.** Show only invitations received within the last 2 months (cut-off: today minus 60 days). Add the invitation date to each entry. Sort by invitation date, most recent first. Skip invitations older than 2 months — do NOT include them in the report.
+**Invitations.** Show only last 2 months. Sort by date, most recent first.
 
-**Salary check is mandatory before every apply.** `__checkSalaryPage()` must be called before every `__apply()`. Never use cached data. (Bug 2 fix)
+**Salary check is mandatory before every apply.** `__checkSalaryPage()` before every `__apply()`. Never use cached data.
 
-**Work permit — flag, never hide.** Vacancies requiring a work permit the user doesn't have go into a dedicated report section.
+**Work permit — flag, never hide.** Dedicated report section.
 
-**English level — flag, never auto-reject.** Vacancies requiring C1/C2/native when user is below that → dedicated report section.
+**English level — flag, never auto-reject.** Dedicated report section.
 
-**New platforms — every run.** Step 2b runs on every daily run, not just weekly.
+**New platforms — every run.** Step 2b runs on every daily run.
 
-**Link verification is not optional.** CORS blocks `fetch()` for external sites — navigate in browser tab directly. hh.ru and Hirify: verify via `fetch(url, {method:'HEAD'})` from their domain. External career sites: open in browser tab.
+**Link verification is not optional.** CORS blocks `fetch()` for external sites — navigate in browser tab directly.
