@@ -285,6 +285,10 @@ Find 5–15 live channels. Save to profile with date of last post. Open in web.t
 
 **Also check for cold start:** if `last_run_date` is more than 14 days ago — notify the user: "Последний запуск был [дата]. Некоторые платформы могут требовать повторной авторизации." Then: verify auth on each platform (mark any that need re-login), run Phase 5 channel activity check before searching.
 
+### Step 0: Salary threshold for this run
+
+If the profile has no `salary_floor`, ask the user ONCE at the very start of the run: «Минимальный порог зарплаты для этого поиска? (можно в рублях, долларах или евро, или «без порога»)». Use the answer for this run only; do not write it into the skill or the repository. If the user answers «без порога» or does not answer, run with no salary filter. If the profile has `salary_floor`, do not ask. The threshold may be given in any currency; compare using the conversion in the hh.ru salary check below, and treat equivalents in USD/EUR/RUB as the same threshold.
+
 ### Step 1: Resume check
 
 Read current resume from profile. Compare with previous version (hash or file date). If changed — re-read, update extracted skills and stack in profile, note at top of report: "📄 Резюме обновлено — новые навыки применены к поиску."
