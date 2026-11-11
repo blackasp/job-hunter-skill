@@ -9,7 +9,7 @@ All notable changes to Job Hunter skill are documented here.
 ### Fixed
 - **Only hh.ru was searched in the previous run.** Cause: platforms were processed one after another with full depth (pages, descriptions, filtering, applications) before the next platform was touched; there was no per-source ledger, no incremental journal and no ban on unconfirmed stop reasons.
 ### Changed
-- `modes/daily-search.md`: Phase A (breadth sweep of every mandatory source) before Phase B (depth, round-robin between sources); source ledger with four statuses; «Confirmed reasons» rule; pacing waits used for other sources; light search for new platforms and Telegram channels on every run; LinkedIn is a mandatory source.
+- `modes/daily-search.md`: Phase A (breadth sweep of every mandatory source) before Phase B (depth, round-robin between sources); source ledger with four statuses; «Confirmed reasons» rule; pacing waits used for other sources; search for new platforms and Telegram channels stays on the 7-day cadence, and a skipped discovery is recorded as «по графику»; LinkedIn is a mandatory source.
 - `references/run-journal.md`: journal created at Step 0 and written incrementally; fields for source ledger, new sources, actions and skips.
 - `modes/report.md`: summary line carries the status of every source (structure unchanged); `modes/telegram.md`: concrete reasons when HR cannot be contacted; `modes/apply.md`: applications start only after the sweep; `references/filters.md`: `manual_reviewed` skipped.
 - New universal rule 13.

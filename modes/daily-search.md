@@ -90,13 +90,13 @@ For each platform in the saved list (priority order), one after another, without
 
 Discovery runs in two modes, chosen from the journal:
 
-- **Quick scan (every run).** Re-read only the new posts (since the last run) of the channels already in the profile's Telegram channel list, using the method in `modes/telegram.md`; every channel is a ledger row. Extract vacancies and filter them like everything else (`references/filters.md`). **Light discovery (every run, also when the full discovery is not due):** run at least two searches for new Telegram channels and groups with vacancies in the profile's field (queries from `modes/telegram.md`, in the user's language and in English; tgstat.ru / telemetr.io; channels mentioned in already-read posts), verify candidates by their posts (date of the latest relevant vacancy within `telegram_vacancy_max_age_days`) and add verified ones to the profile.
-- **Full discovery (when `last_full_discovery_date` is older than `discovery_interval_days` from the profile — default 3 days — or the user asks, or the quick scan failed).** Run the discovery and verification steps of `modes/telegram.md` (clarify role from the profile, discover, verify by posts, collect), before the web search in Step 2c. Besides the usual sources, look for **recently published lists and recommendations** (articles, posts, forum threads, channel digests) of Telegram channels and job platforms for the user's field. Collect only what fits the user's profile (field, role, work format, geography, language). Newly verified channels are **added to the profile's Telegram channel list automatically**; channels that failed verification are not added (mention them in the report limits). New channels appear in the report as rows of «Список новых платформ этого запуска» (platform type: Telegram-канал, link, vacancies found, added to profile: yes/no).
+- **Quick scan (every run).** Re-read only the new posts (since the last run) of the channels already in the profile's Telegram channel list, using the method in `modes/telegram.md`; every channel is a ledger row. Extract vacancies and filter them like everything else (`references/filters.md`).
+- **Full discovery (when `last_full_discovery_date` is older than `discovery_interval_days` from the profile — default 7 days, as agreed with the user — or the user asks, or the quick scan failed).** Run the discovery and verification steps of `modes/telegram.md` (clarify role from the profile, discover, verify by posts, collect), before the web search in Step 2c. Besides the usual sources, look for **recently published lists and recommendations** (articles, posts, forum threads, channel digests) of Telegram channels and job platforms for the user's field. Collect only what fits the user's profile (field, role, work format, geography, language). Newly verified channels are **added to the profile's Telegram channel list automatically**; channels that failed verification are not added (mention them in the report limits). New channels appear in the report as rows of «Список новых платформ этого запуска» (platform type: Telegram-канал, link, vacancies found, added to profile: yes/no).
 - After a full discovery write `last_full_discovery_date` (today) to the profile and to the journal.
 
-**Step 2c — Web search for new platforms (every run; full on a full-discovery run)**
+**Step 2c — Web search for new platforms (on a full-discovery run, every `discovery_interval_days`, default 7)**
 
-Every run does at least the first two queries below (light search) to discover job boards and aggregators not yet in the saved list. A full-discovery run (cadence and journal date as in Step 2b) runs all queries. The search is never skipped for «not due»: only a confirmed reason (see «Confirmed reasons») can turn it into «не проверен». It supplements — never replaces — the known platforms.
+On a full-discovery run (same cadence and journal date as Step 2b) do a web search to discover job boards and aggregators not yet in the saved list. Between full-discovery runs the discovery rows of the ledger get the status «не проверен — по графику, следующая полная проверка [date]» (the agreed cadence is a confirmed reason); all known platforms and known Telegram channels are still checked on every run. A full-discovery run that is due is never skipped without a confirmed reason (see «Confirmed reasons»). It supplements — never replaces — the known platforms.
 
 Search queries to run (adapt keywords to the user's profession from profile `keywords` and `job_title`):
 ```
@@ -172,7 +172,7 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 
 **Two modes:**
 - **Quick scan (every daily run):** Step 2b (re-read known Telegram channels) described above.
-- **Full discovery:** Steps 2b and 2c on the cadence `discovery_interval_days` (default 3), or when the user says «find new channels / platforms». Full procedure below.
+- **Full discovery:** Steps 2b and 2c on the cadence `discovery_interval_days` (default 7), or when the user says «find new channels / platforms». Full procedure below.
 
 ### Deep scan procedure
 
