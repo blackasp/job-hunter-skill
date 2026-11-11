@@ -45,4 +45,5 @@ last_run_date:
 last_full_discovery_date:
 run_journal_url:
 applied_ids: []
+manual_reviewed: []                # vacancies the user already handled by hand; never listed for manual review again
 ```

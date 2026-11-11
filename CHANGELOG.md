@@ -8,6 +8,7 @@ All notable changes to Job Hunter skill are documented here.
 
 ### Changed
 - **Autonomous sending is mandatory.** Everything that can be sent without the user is sent without the user: applications on every platform with a confirmed login (with a generated cover letter wherever there is a field) and messages to HR contacts in Telegram. The skill no longer asks to confirm the list. Only test tasks, steps a person must do (captcha, codes, payment), blocked clicks, platforms without a confirmed login and borderline filter results go to the manual list. New universal rule 12; `modes/apply.md` («Autonomous sending»), `modes/telegram.md`, `modes/report.md`.
+- **Manual-review memory.** Vacancies the user marks in the report's manual-review table are stored in the profile (`manual_reviewed`) and never listed for manual review again.
 
 ---
 
