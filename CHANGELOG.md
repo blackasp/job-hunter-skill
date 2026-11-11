@@ -4,6 +4,34 @@ All notable changes to Job Hunter skill are documented here.
 
 ---
 
+## [1.2.0] — 2026-11-11
+
+### Changed
+- **Modular structure.** The single 1000+ line file is split into an entry file (`job-hunter-skill.md`: rules, settings model, map of modes), `modes/` (onboarding, daily-search, telegram, apply, report, creative) and `references/` (platforms, filters, run-journal, profile-template). Only what a task needs is loaded.
+- **Universal rules separated from personal settings.** Personal blockers, geography (including the Russia-only filter), keywords, salary, freshness and similar values are read from the user's profile and are no longer hardcoded for everyone; a new user starts with no personal filters. Universal rules never depend on onboarding.
+- **Merged the two diverged copies** of the skill (repository and installed): the repository version now also has all-pages search, TG messages to HR contacts, proxy-blocking fallback, and browser safety handling.
+- **Cover letters** are 4–5 sentences (five parts, one sentence each).
+- **Technology blockers** are matched only in the «Requirements» and «Responsibilities» blocks; industries, employers and geography stay full-text.
+- **Confirmation before applying:** asked in live sessions, treated as given in advance in unattended runs and recorded.
+- **Pacing:** the floor is fixed, the user can only make it slower (`apply_pacing`), and any captcha/429/block escalates it automatically for 7 days.
+- **Daily discovery cadence:** known Telegram channels are re-read every run; a full discovery (new channels and platforms) runs every `discovery_interval_days` (default 3).
+- **hh.ru resume link** replaces the PDF path; it is sent to HR contacts instead of an attachment.
+
+### Added
+- **All result pages** are read newest first; the stop condition is the freshness threshold.
+- **Telegram channel search and verification by posts** for any profession (`modes/telegram.md`), with exact dates from the public preview and explicit limits.
+- **Run journal** (`references/run-journal.md`): step timings, pages and vacancies per platform, blocks, next full discovery.
+- **Search-only mode** on platforms without a confirmed login and on newly found platforms.
+- **Platforms:** JobRocket, HireHi and 20+ more across professions.
+- **Onboarding questions:** exclusions split into technologies / global / roles, freshness for platforms and Telegram, discovery interval, pacing, cover-letter title exclusions, resume link.
+- **Profile template** (`references/profile-template.md`) and a reminder to open a pull request when the profile structure changes.
+- **Per-run salary question** when the profile has no salary floor.
+
+### Not carried over
+- The `dispatchEvent` workaround for click blocks (old «Bug 6»): a blocked click is handed to the user instead of being bypassed. Loading the `chrome-browser` skill before applying is kept.
+
+---
+
 ## [1.1.0] — 2026-11-05
 
 ### Added
