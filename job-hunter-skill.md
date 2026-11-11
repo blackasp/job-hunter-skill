@@ -42,8 +42,8 @@ These rules apply regardless of the user's profile or onboarding status. They ar
 8. **Apply personal filters strictly** — once a user has configured exclusion rules in their profile, apply them consistently to every vacancy, every run, without exception.
 9. **Search-only on platforms without a confirmed login** — on any platform where the user is not registered or logged in (including every newly discovered platform), only search and report matching vacancies. Never apply, never register or create accounts, never enter credentials. Such vacancies go to the report section «Новые платформы — результаты поиска» with the status «Требуется регистрация».
 
-10. **Merged-requirements rule** — where a universal rule and a personal setting seem to conflict, the universal rule wins for *how the skill works* (links, report format, no salary, search-only without login, pacing floor), and the personal setting wins for *what is searched and excluded* (profession, geography, blockers, freshness). A personal setting can make behaviour stricter or slower; it can never switch off a universal rule.
-11. **Pacing floor** — application and page-request pacing never goes below the floor in `modes/apply.md` («Pacing»), whatever the setting. A captcha, `blocked: true` or HTTP 429 stops the loop immediately.
+10. **Merged-requirements rule** — where a universal rule and a personal setting seem to conflict, the universal rule wins for *how the skill works* (links, report format, no salary, search-only without login, fixed pacing), and the personal setting wins for *what is searched and excluded* (profession, geography, blockers, freshness). A personal setting can make behaviour stricter or slower; it can never switch off a universal rule.
+11. **Fixed careful pacing** — application and page-request pacing follows `modes/apply.md` («Pacing») for every user from the first run; it is a system rule, not a setting, and nothing in a profile can shorten it. A captcha, `blocked: true` or HTTP 429 stops the loop immediately.
 
 > **Titles:** use the user's own `job_title` from the profile everywhere. A title listed in `cover_letter_title_exclusions` is never used for the user in cover letters or reports, even when a vacancy carries it (it may still be searched via `keywords`).
 
@@ -67,7 +67,6 @@ Personal settings are NOT universal defaults. They are configured by each user d
 - **English level**
 - **Platform vacancy freshness** — how many days back vacancies on job platforms count (`max_vacancy_age_days`)
 - **Full-discovery interval** — how often to search for new Telegram channels and platforms (`discovery_interval_days`, default 3)
-- **Application pacing** — `apply_pacing`: standard or careful (never below the floor)
 - **Cover-letter title exclusions** — titles never used for the user in letters (`cover_letter_title_exclusions`)
 - **Resume link** — `resume_url`, sent to HR contacts in Telegram messages
 - **Telegram vacancy freshness** — how many days back vacancies in Telegram channels count (`telegram_vacancy_max_age_days`)
@@ -146,7 +145,6 @@ The profile file (see «Where the profile lives»):
 - `role_exclusions`: roles excluded by title
 - `cover_letter_title_exclusions`: titles never used for the user in cover letters
 - `discovery_interval_days`: days between full discovery runs (default 3); `last_full_discovery_date`
-- `apply_pacing`: standard / careful (default standard)
 - `run_journal_url`: link to the run journal (see `references/run-journal.md`)
 - `work_permit_countries`: list of countries where user can legally work without sponsorship
 - `english_level`: user's English level (A1–C2)

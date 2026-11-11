@@ -25,7 +25,7 @@ The journal answers three questions: *when was the last run, when was the last f
 
 ## How it is used
 
-1. **Start of run:** read the last rows. Decide quick scan or full discovery (`modes/daily-search.md`, Step 2b). If a platform had a captcha, 429 or blocked click in the last 7 days, use `careful` pacing for it (`modes/apply.md`, «Pacing»).
+1. **Start of run:** read the last rows. Decide quick scan or full discovery (`modes/daily-search.md`, Step 2b). If a platform had a captcha, 429 or blocked click in the last 7 days, double the pacing for it (`modes/apply.md`, «Pacing»).
 2. **During the run:** note the start and end of each step. Use real clock readings, never estimates.
 3. **End of run:** write the row, update `last_run_date` (and `last_full_discovery_date` after a full discovery).
 4. **Timing questions:** answer only from the rows; if fewer than 3 runs are logged, say the sample is too small for averages.

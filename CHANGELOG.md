@@ -13,7 +13,7 @@ All notable changes to Job Hunter skill are documented here.
 - **Cover letters** are 4–5 sentences (five parts, one sentence each).
 - **Technology blockers** are matched only in the «Requirements» and «Responsibilities» blocks; industries, employers and geography stay full-text.
 - **Confirmation before applying:** asked in live sessions, treated as given in advance in unattended runs and recorded.
-- **Pacing:** the floor is fixed, the user can only make it slower (`apply_pacing`), and any captcha/429/block escalates it automatically for 7 days.
+- **Pacing:** careful pacing is a fixed system rule for everyone from the first run (5–12 s per application, 45–90 s after every 5, 5–8 min after every 20, 4–8 s between result pages), not a setting; any captcha/429/block doubles it on that platform for 7 days.
 - **Daily discovery cadence:** known Telegram channels are re-read every run; a full discovery (new channels and platforms) runs every `discovery_interval_days` (default 3).
 - **hh.ru resume link** replaces the PDF path; it is sent to HR contacts instead of an attachment.
 
@@ -23,7 +23,7 @@ All notable changes to Job Hunter skill are documented here.
 - **Run journal** (`references/run-journal.md`): step timings, pages and vacancies per platform, blocks, next full discovery.
 - **Search-only mode** on platforms without a confirmed login and on newly found platforms.
 - **Platforms:** JobRocket, HireHi and 20+ more across professions.
-- **Onboarding questions:** exclusions split into technologies / global / roles, freshness for platforms and Telegram, discovery interval, pacing, cover-letter title exclusions, resume link.
+- **Onboarding questions:** exclusions split into technologies / global / roles, freshness for platforms and Telegram, discovery interval, cover-letter title exclusions, resume link.
 - **Profile template** (`references/profile-template.md`) and a reminder to open a pull request when the profile structure changes.
 - **Per-run salary question** when the profile has no salary floor.
 

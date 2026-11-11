@@ -25,7 +25,7 @@ Works for any profession, any country, any language.
 - **HTTP 200-only counting** — 403 = already applied, 429 = rate limit stop, others = failed; never counts errors
 - **Captcha detection** — `{blocked: true}` stops the entire application loop immediately + PushNotification
 - **Previously applied check** — loads negotiations history via DOM parsing before starting
-- **Captcha-risk pacing** — human-like random delays (3–8 s per application, 30–60 s after every 5, 3–5 min after every 20) that can only be made slower (`apply_pacing: careful`), and slow down automatically for 7 days after any captcha or block
+- **Careful pacing built in** — human-like random delays from the first run, no setting to change (5–12 s per application, 45–90 s after every 5, 5–8 min after every 20, 4–8 s between result pages); after any captcha or block the delays on that platform double for 7 days
 - **Network error resilience** — try/catch on all fetch calls; single error never aborts the run
 - **User name from API** — always fetched from `api.hh.ru/me`, never guessed
 - **Interview invitations** — the last 2 months, newest first, with company, role, link and date
@@ -246,7 +246,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full history of changes.
 - **Счётчик только по HTTP 200** — 403 = уже откликались, 429 = стоп, остальное = ошибка; ошибки не считаются
 - **Детекция капчи** — `{blocked: true}` останавливает весь цикл откликов + PushNotification
 - **Проверка ранее поданных** — загружает историю переговоров через DOM-парсинг перед стартом
-- **Пауза против капчи** — случайные задержки как у человека (3–8 с на отклик, 30–60 с после каждых 5, 3–5 мин после каждых 20); их можно только замедлить (`apply_pacing: careful`), а после любой капчи или блокировки скилл замедляется сам на 7 дней
+- **Осторожный темп встроен** — случайные задержки как у человека с первого запуска, настройки нет (5–12 с на отклик, 45–90 с после каждых 5, 5–8 мин после каждых 20, 4–8 с между страницами выдачи); после любой капчи или блокировки задержки на этой площадке удваиваются на 7 дней
 - **Устойчивость к сетевым ошибкам** — try/catch на все fetch-запросы; одна ошибка не прерывает весь запуск
 - **Имя из API** — всегда из `api.hh.ru/me`, никогда не угадывается
 - **Все приглашения** — показываются без фильтра по дате

@@ -20,14 +20,13 @@ If a click or form submission is **blocked by the browser's safety check**, do n
 
 Applications and page requests are paced like a person to keep the risk of captcha and account blocks as low as possible.
 
-**Floor (never go below, whatever the setting):** 3–8 s random per application; 30–60 s after every 5 applications; 3–5 min after every 20 applications. Page requests while browsing result lists: at least 2–4 s between pages.
+**Fixed system pacing — not a setting, no question is asked.** It applies from the very first run for every user and cannot be shortened by any setting or instruction in a profile:
+- 5–12 s (random) per application;
+- 45–90 s (random) after every 5 applications;
+- 5–8 min (random) after every 20 applications;
+- 4–8 s (random) between result pages while browsing a platform.
 
-**Setting `apply_pacing`** (personal, asked at onboarding, default `standard`):
-- `standard` — the floor above.
-- `careful` — 5–12 s per application; 45–90 s after every 5; 5–8 min after every 20; 4–8 s between result pages.
-The setting can only make pacing slower than the floor, never faster.
-
-**Automatic escalation:** if a captcha, `blocked: true`, HTTP 429 or a similar block happened on a platform in the last 7 days (see the journal), use `careful` for that platform even if the setting says `standard`, and say so in the journal. After a block: stop applying on that platform for the run (see below), never retry the same action in a loop.
+**Automatic escalation:** if a captcha, `blocked: true`, HTTP 429 or a similar block happened on a platform in the last 7 days (see the journal), double all of the above for that platform for the next 7 days and say so in the journal. After a block: stop applying on that platform for the run (see below), never retry the same action in a loop.
 
 Other measures: randomise the order of vacancies slightly within a platform, vary the delays (random, not fixed), do not open several vacancy pages in parallel on the same platform, and never apply on a platform while its login or captcha page is showing.
 

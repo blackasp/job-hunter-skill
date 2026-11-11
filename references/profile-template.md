@@ -22,7 +22,6 @@ work_permit_countries: []
 max_vacancy_age_days: 30           # platforms
 telegram_vacancy_max_age_days: 30
 discovery_interval_days: 3         # full search for new channels/platforms
-apply_pacing: standard             # standard / careful (never below the floor)
 
 ## Filters (personal)
 user_blockers_tech: []             # block only if required / part of duties
