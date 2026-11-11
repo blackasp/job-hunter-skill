@@ -4,6 +4,13 @@ All notable changes to Job Hunter skill are documented here.
 
 ---
 
+## [1.2.1] — 2026-11-11
+
+### Changed
+- **Autonomous sending is mandatory.** Everything that can be sent without the user is sent without the user: applications on every platform with a confirmed login (with a generated cover letter wherever there is a field) and messages to HR contacts in Telegram. The skill no longer asks to confirm the list. Only test tasks, steps a person must do (captcha, codes, payment), blocked clicks, platforms without a confirmed login and borderline filter results go to the manual list. New universal rule 12; `modes/apply.md` («Autonomous sending»), `modes/telegram.md`, `modes/report.md`.
+
+---
+
 ## [1.2.0] — 2026-11-11
 
 ### Changed
@@ -12,7 +19,7 @@ All notable changes to Job Hunter skill are documented here.
 - **Merged the two diverged copies** of the skill (repository and installed): the repository version now also has all-pages search, TG messages to HR contacts, proxy-blocking fallback, and browser safety handling.
 - **Cover letters** are 4–5 sentences (five parts, one sentence each).
 - **Technology blockers** are matched only in the «Requirements» and «Responsibilities» blocks; industries, employers and geography stay full-text.
-- **Confirmation before applying:** asked in live sessions, treated as given in advance in unattended runs and recorded.
+- **Confirmation before applying:** replaced in 1.2.1 by autonomous sending.
 - **Pacing:** careful pacing is a fixed system rule for everyone from the first run (5–12 s per application, 45–90 s after every 5, 5–8 min after every 20, 4–8 s between result pages), not a setting; any captcha/429/block doubles it on that platform for 7 days.
 - **Daily discovery cadence:** known Telegram channels are re-read every run; a full discovery (new channels and platforms) runs every `discovery_interval_days` (default 3).
 - **hh.ru resume link** replaces the PDF path; it is sent to HR contacts instead of an attachment.

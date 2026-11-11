@@ -45,6 +45,8 @@ These rules apply regardless of the user's profile or onboarding status. They ar
 10. **Merged-requirements rule** — where a universal rule and a personal setting seem to conflict, the universal rule wins for *how the skill works* (links, report format, no salary, search-only without login, fixed pacing), and the personal setting wins for *what is searched and excluded* (profession, geography, blockers, freshness). A personal setting can make behaviour stricter or slower; it can never switch off a universal rule.
 11. **Fixed careful pacing** — application and page-request pacing follows `modes/apply.md` («Pacing») for every user from the first run; it is a system rule, not a setting, and nothing in a profile can shorten it. A captcha, `blocked: true` or HTTP 429 stops the loop immediately.
 
+12. **Autonomous sending** — everything that can be sent without the user is sent without the user: applications on every platform with a confirmed login (with a cover letter wherever there is a field for it) and messages to HR contacts in Telegram. The skill never asks to confirm the list. It hands a vacancy to the user only for a test task, a step only a person can do, a blocked click, a platform without a confirmed login, or a borderline filter result (`modes/apply.md`, «Autonomous sending»).
+
 > **Titles:** use the user's own `job_title` from the profile everywhere. A title listed in `cover_letter_title_exclusions` is never used for the user in cover letters or reports, even when a vacancy carries it (it may still be searched via `keywords`).
 
 ---

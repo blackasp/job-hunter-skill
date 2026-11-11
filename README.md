@@ -117,7 +117,7 @@ Set up a scheduled task in Claude Code — the skill will run automatically ever
 2. Opens the run journal and decides between a quick scan and a full discovery of new channels and platforms (every 3 days by default)
 3. Searches all platforms (all pages, newest first) and re-reads Telegram channels
 4. Filters and ranks by your profile
-5. Asks for confirmation before applying in a live session (treated as given in advance in a scheduled run)
+5. Applies on every platform with a confirmed login and messages HR contacts in Telegram on its own, with a cover letter where there is a field for it — no confirmation of the list. Only test tasks and steps a person must do go to the manual list
 6. Submits applications with short unique cover letters (4–5 sentences) at a human pace
 7. Creates a report with direct links — **always created, even if 0 vacancies found** — and writes the journal row
 
@@ -338,7 +338,7 @@ references/                площадки, фильтры, журнал зап
 2. Открывает журнал запусков и выбирает: быстрый просмотр или полный поиск новых каналов и площадок (по умолчанию раз в 3 дня)
 3. Ищет вакансии на всех площадках (все страницы, от новых к старым) и перечитывает Telegram-каналы
 4. Фильтрует и ранжирует по твоему профилю
-5. В живой сессии спрашивает подтверждение перед откликами (в запуске по расписанию оно считается данным заранее)
+5. Сама откликается на всех площадках с подтверждённым входом и пишет HR в Telegram — с сопроводительным письмом там, где есть поле; список на подтверждение не показывает. В ручной список попадают только тестовые задания и шаги, которые может сделать лишь человек
 6. Отправляет отклики с короткими уникальными письмами (4–5 предложений) в человеческом темпе
 7. Создаёт отчёт — **всегда, даже если 0 вакансий найдено** — и записывает строку в журнал
 

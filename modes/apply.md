@@ -2,13 +2,16 @@
 
 ## Auto-applications
 
-**Only on platforms with a confirmed login.** Vacancies found on platforms without a confirmed login (search-only, Universal rule 9) are never applied to automatically — they stay in the report section «Новые платформы — результаты поиска» with the status «Требуется регистрация».
+**Only on platforms with a confirmed login — and on all of them.** Vacancies found on platforms without a confirmed login (search-only, Universal rule 9) are never applied to automatically — they stay in the report section «Новые платформы — результаты поиска» with the status «Требуется регистрация».
 
-### Confirmation before sending
+### Autonomous sending (mandatory, no questions)
 
-- **Live (interactive) session:** show the user a brief list — «Найдено N вакансий. Все будут поданы автоматически. Продолжить?» — and wait for the answer. This prevents accidental mass-applying.
-- **Unattended run** (scheduled task, headless session, or the user said not to ask questions): the confirmation is treated as given in advance. Do not stop to ask. Record «подтверждение считалось заранее данным» in the run journal and in the one-line summary at the top of the report.
-- In both cases the filters, the search-only rule for platforms without a confirmed login, and the pacing rules below still apply in full.
+**Everything that can be sent without the user is sent without the user.** This applies to every platform with a confirmed login (hh.ru and all others) and to Telegram, in live sessions and unattended runs alike:
+
+- **Do not ask for confirmation of the list** and do not wait for «Продолжить?». A vacancy that passed the filters is applied to, with a cover letter written by the skill (Cover Letter Framework below) wherever the platform has a cover-letter field.
+- **Telegram:** when a vacancy post that passed the filters contains a direct HR contact (@username or link), the skill writes the message (with the resume link) and **sends it itself**, see `modes/telegram.md`.
+- **The only reasons to hand a vacancy to the user** (list «Требуют ручного отклика» with a clickable link and the exact reason): a test task or assignment must be completed; the platform requires a step only a person can do (captcha, SMS or e-mail code, identity check, payment, file upload the skill cannot produce); the browser's safety check blocked the click; the platform has no confirmed login (search-only, Universal rule 9); the vacancy is borderline by the filters.
+- Record «отправлено без участия пользователя» in the run journal and the one-line summary of the report. Filters, search-only rule, and the pacing rules below still apply in full.
 
 ### Browser safety checks
 
