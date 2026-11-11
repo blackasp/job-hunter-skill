@@ -21,6 +21,7 @@ These rules apply regardless of the user's profile or onboarding status. They ar
 6. **Telegram vacancies — always include direct message link** — for EVERY vacancy found in a Telegram channel, include the direct link to the specific message in format `https://t.me/channelname/messageID`. Without this link the vacancy row is incomplete. Never report a TG vacancy without the direct message link. To get the link: in web.telegram.org right-click (or long-press) the post → «Copy link» → result: `https://t.me/channelname/NNN`. If the link cannot be obtained — do NOT include that vacancy in the report.
 7. **Report format is locked** — the daily report structure defined in Step 7 must not be changed without explicit user instruction.
 8. **Apply personal filters strictly** — once a user has configured exclusion rules in their profile, apply them consistently to every vacancy, every run, without exception.
+9. **Search-only on platforms without a confirmed login** — on any platform where the user is not registered or logged in (including every newly discovered platform), only search and report matching vacancies. Never apply, never register or create accounts, never enter credentials. Such vacancies go to the report section «Новые платформы — результаты поиска» with the status «Требуется регистрация».
 
 > **Note on rule #2 about titles:** The rule «Never call the user a "бизнес-аналитик"» applies only when the user has identified as a системный аналитик / фулстек-аналитик — this is stored in their profile (`job_title`). Do not apply this rule to users who have a different job title.
 
@@ -324,10 +325,12 @@ Search queries to run (adapt keywords to the user's profession from profile `key
 For each newly found platform:
 - Check if it's already in the saved list — skip if yes
 - Open the platform, run a quick search for the user's keywords
-- If relevant vacancies found → add to this run's pool AND propose adding to the saved list in the report
+- If relevant vacancies found → **do NOT apply** (the user is not registered there). Apply the same filters as everywhere else (universal + personal), then list each matching vacancy in the report section «Новые платформы — результаты поиска»: clickable link, company, status «Требуется регистрация». Also propose adding the platform to the saved list.
 - If no relevant results → note in report as "проверили, подходящих нет" and skip next time
 
 Report new platforms found in a dedicated section: **"🆕 Новые платформы — результаты поиска"** — list each with the number of relevant vacancies found (or zero).
+
+**Registered vs not registered:** a platform counts as registered only if the profile marks a confirmed login for it (see Phase 2). Everything else is search-only (Universal rule 9). The user registers manually; after that she tells the skill, the platform is marked as registered and from the next run vacancies there are handled like on any other platform, including auto-apply.
 
 **hh.ru-specific checks (apply when searching hh.ru):**
 
@@ -513,6 +516,8 @@ After filtering — rank by relevance:
 - Salary level (when listed)
 
 ### Step 6: Auto-applications
+
+**Only on platforms with a confirmed login.** Vacancies found on platforms without a confirmed login (search-only, Universal rule 9) are never applied to automatically — they stay in the report section «Новые платформы — результаты поиска» with the status «Требуется регистрация».
 
 **Before sending any applications** — show the user a brief list: "Найдено N вакансий. Все будут поданы автоматически. Продолжить?" Wait for confirmation. This prevents accidental mass-applying.
 
