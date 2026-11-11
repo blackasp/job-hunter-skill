@@ -13,7 +13,7 @@
 
 [дата] · [mention пользователя]
 
-[Краткое summary одной строкой: N авто-откликов, N TG-сообщений, N вакансий требуют ручного отклика. При необходимости в ту же строку: «отправлено без участия пользователя», «поиск новых платформ: пропущен, следующий [дата]», статус каждого обязательного источника «[Источник]: проверен (N страниц, M проверено, K прошли фильтр) / недоступен (причина) / не поддерживает нужный поиск (что отсутствует) / не проверен (причина)». Источники со статусом «недоступен» и «не проверен» дополнительно попадают в «Что сделать вручную» с точным действием.]
+[Краткое summary: первая строка — «N авто-откликов, N TG-сообщений, N вакансий требуют ручного отклика» (при необходимости с «отправлено без участия пользователя», «поиск новых платформ: пропущен, следующий [дата]»). Ниже — маркированный список «Источники»: по одному пункту на каждый обязательный источник в виде «[Источник] — проверен (N страниц, M проверено, K прошли фильтр) / недоступен (причина) / не поддерживает нужный поиск (что отсутствует) / не проверен (причина)». Источники со статусом «недоступен» и «не проверен» дополнительно попадают в «Что сделать вручную» с точным действием.]
 
 ## Авто-отклики [N]
 Таблица: Платформа | Вакансия | Компания | Статус
@@ -36,6 +36,7 @@
 
 ## Новые платформы — результаты поиска
 Таблица: Платформа | Вакансия (ссылка) | Компания | Статус/Действие
+- ТОЛЬКО платформы, найденные поиском новых платформ этого запуска и ещё не бывшие в профиле. Платформа из профиля (в том числе добавленная ранее в этот же день) здесь не показывается. Если новых платформ нет или поиск идёт по графику не в этот запуск — одна строка с пояснением и датой следующего поиска.
 - Вакансия — кликабельная ссылка
 - Статус/Действие — «Отклик отправлен», «Требуется регистрация», «Написано письмо», «Нет подходящих» и т.д.
 
@@ -58,6 +59,8 @@
 6. **Link verification** — hh.ru and Hirify links: verify via fetch(url, {method:'HEAD'}) in browser console. External sites: navigate directly in a browser tab.
 7. **New platforms auto-save** — after the report is finalized, add every platform from «Список новых платформ этого запуска» to the known platforms list in `/areas/job-hunter-profile.md` automatically.
 8. **Format is immutable** — do NOT rearrange sections, rename columns, merge sections, or add/remove sections without explicit user instruction. The format above is the contract.
+9. **New platforms section holds only new platforms.** Results for platforms already in the profile go to «Авто-отклики» (what was sent), «Требуют ручного отклика» (what needs the user), «Заблокированы / Plus» (what was filtered out) and the per-source list in the summary. They never appear in «Новые платформы — результаты поиска» or «Список новых платформ этого запуска».
+10. **No walls of text.** Every comment, explanation or summary in the report (summary, the note under «TG-сообщения отправлены», the note under «Заблокированы / Plus», any other text) is written as short logical paragraphs or as a list: one item per platform, per reason or per step. Detail (numbers, reasons) stays; a single solid block of text is not allowed. The same applies to messages to the user outside the report.
 
 ---
 
