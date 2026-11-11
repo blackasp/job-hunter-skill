@@ -41,6 +41,7 @@ Personal settings are NOT universal defaults. They are configured by each user d
 - **Remote/office/hybrid preference**
 - **Work permit countries** — where user can legally work
 - **English level**
+- **Telegram vacancy freshness** — how many days back vacancies in Telegram channels count (`telegram_vacancy_max_age_days`)
 - **Resume location**
 - **Platform list** — which platforms to search
 - **Telegram channels** — which channels to monitor
@@ -74,6 +75,7 @@ When the user updates a setting — apply the change immediately to the profile 
 - Гео-исключения: [geo_exclusions]
 - Разрешение на работу: [work_permit_countries]
 - Уровень английского: [english_level]
+- Свежесть вакансий в Telegram: [telegram_vacancy_max_age_days] дн.
 ```
 
 ---
@@ -151,6 +153,7 @@ Let's set up your search profile. Answer everything at once — I'll remember it
     (This determines which vacancies require permits you don't have — those will be flagged, not hidden.)
 13. English level: A1 / A2 / B1 / B2 / C1 / C2 / Native
     (Vacancies requiring a higher level than yours will be flagged in the report.)
+14. Telegram vacancies: how fresh should they be? (vacancies and channels older than this many days are skipped; default 30 days): ___
 ```
 
 After the user responds:
@@ -171,6 +174,7 @@ After the user responds:
   - `user_blockers: [list]` — user's own exclusion list (technologies, industries, etc.)
   - `work_permit_countries: [list]`
   - `english_level: [B1/B2/C1/etc]`
+  - `telegram_vacancy_max_age_days: [N]` — default 30 if the user does not answer
 
 ---
 
@@ -734,7 +738,7 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 
 ### Deep scan procedure
 
-- Re-verify current Telegram channels by Phase 7 (remove ones with no relevant vacancy in the last 30 days)
+- Re-verify current Telegram channels by Phase 7 (remove ones with no relevant vacancy in the last N days, N = `telegram_vacancy_max_age_days`)
 - Search for new Telegram channels on tgstat.ru / telemetr.io
 - Run an expanded web search for new niche platforms and aggregators:
   ```
@@ -935,7 +939,7 @@ Channel title and subscribers: `.tgme_channel_info_header_title`, `.tgme_channel
 
 ### Step 1: Clarify field and role
 
-Use `job_title` and `keywords` from the profile. If the profile has none (new user, or the user names another field in the request), ask once: «Какая сфера и роль? (например, системный аналитик, дизайнер, продакт-менеджер)» and use the answer for this search; save it to the profile only if the user is doing onboarding. Freshness: a channel must have a relevant vacancy within the last 30 days to be verified; vacancies are collected from verified channels for the last 2 months (60 days). The user can state other periods.
+Use `job_title` and `keywords` from the profile. If the profile has none (new user, or the user names another field in the request), ask once: «Какая сфера и роль? (например, системный аналитик, дизайнер, продакт-менеджер)» and use the answer for this search; save it to the profile only if the user is doing onboarding. Freshness: use `telegram_vacancy_max_age_days` from the profile (default 30 days if not set); the user can state another period in the request. Call it N below.
 
 ### Step 2: Discover candidate channels
 
@@ -951,19 +955,19 @@ Only real channels found in sources count as candidates. Never invent a channel 
 Open `https://t.me/s/<channel>` in the browser. A channel is **verified** only if ALL of these hold:
 1. The posts can be read (preview works).
 2. Among the last ~20 posts most are vacancies (not course ads, spam or news).
-3. At least one vacancy post for the user's field and role is dated within the last 30 days (exact `datetime` seen on the page).
+3. At least one vacancy post for the user's field and role is dated within the last N days (exact `datetime` seen on the page).
 
-Page back with `?before=<oldest id>` up to 5 pages when the first page does not reach 30 days. Record for the channel: title, link, specialization (as actually seen in posts, not as in the description), date and link of the freshest relevant vacancy, approximate subscribers if shown.
+Page back with `?before=<oldest id>` up to 5 pages when the first page does not reach N days. Record for the channel: title, link, specialization (as actually seen in posts, not as in the description), date and link of the freshest relevant vacancy, approximate subscribers if shown.
 
-Statuses: **проверен** (all conditions met), **нет свежих релевантных** (readable, but nothing relevant in 30 days — do not include in the list), **не удалось проверить** (preview closed, private, group or page not loading — list separately with the reason). A channel is never shown as verified because of its description alone.
+Statuses: **проверен** (all conditions met), **нет свежих релевантных** (readable, but nothing relevant in N days — do not include in the list), **не удалось проверить** (preview closed, private, group or page not loading — list separately with the reason). A channel is never shown as verified because of its description alone.
 
 ### Step 4: Collect vacancies
 
-From verified channels collect vacancy posts from the last 60 days. Apply the filters from Step 5 (universal + the user's personal filters). For each vacancy give: title, date of the post, company, short summary (1–2 lines), and the direct link to the post `https://t.me/channelname/NNN`. A vacancy without a direct post link is not included. Remove duplicates (same company + role across channels; keep the earliest post and mention the others).
+From verified channels collect vacancy posts from the last N days. Apply the filters from Step 5 (universal + the user's personal filters). For each vacancy give: title, date of the post, company, short summary (1–2 lines), and the direct link to the post `https://t.me/channelname/NNN`. A vacancy without a direct post link is not included. Remove duplicates (same company + role across channels; keep the earliest post and mention the others).
 
 ### Output format
 
-1. **Параметры поиска:** роль/сфера, период свежести вакансий (по умолчанию 60 дней), порог свежести каналов (30 дней), дата проверки.
+1. **Параметры поиска:** роль/сфера, период свежести (N дней, по умолчанию 30), дата проверки.
 2. **Проверенные каналы** — table: Название | Ссылка | Специализация | Свежая релевантная вакансия (дата + ссылка на пост).
 3. **Свежие вакансии** — table: Должность | Компания | Дата публикации | Кратко | Ссылка на пост. Newest first.
 4. **Ограничения поиска:** каналы, которые не удалось проверить (причина), каналы без свежих релевантных вакансий, случаи, когда свежесть не удалось подтвердить, и если результатов мало — прямо об этом сказать.
@@ -986,6 +990,7 @@ File `/areas/job-hunter-profile.md`:
 - `salary_floor`: minimum salary
 - `salary_currency`: currency for salary threshold
 - `show_no_salary`: whether to show vacancies without stated salary (yes/no)
+- `telegram_vacancy_max_age_days`: freshness of Telegram vacancies and channels, days (default 30)
 - `experience_years`: total years of experience
 - `experience_level`: junior/mid/senior/lead
 - `user_blockers`: list of terms/industries/technologies the user wants excluded
