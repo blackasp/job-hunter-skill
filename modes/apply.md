@@ -29,6 +29,8 @@ Applications and page requests are paced like a person to keep the risk of captc
 - 5–8 min (random) after every 20 applications;
 - 4–8 s (random) between result pages while browsing a platform.
 
+**Pacing waits are working time for other sources.** While waiting between applications on one platform, continue with the next source or batch of the run (`modes/daily-search.md`, «Run order rules»), instead of idling or stopping the run. Applications never start before the breadth sweep of all mandatory sources has reached a final status for every source.
+
 **Automatic escalation:** if a captcha, `blocked: true`, HTTP 429 or a similar block happened on a platform in the last 7 days (see the journal), double all of the above for that platform for the next 7 days and say so in the journal. After a block: stop applying on that platform for the run (see below), never retry the same action in a loop.
 
 Other measures: randomise the order of vacancies slightly within a platform, vary the delays (random, not fixed), do not open several vacancy pages in parallel on the same platform, and never apply on a platform while its login or captcha page is showing.

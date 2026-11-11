@@ -18,7 +18,7 @@ This file holds what applies to every run: the rules, the settings model, and th
 | The user wants… | Load |
 |---|---|
 | to set up the search for the first time, or redo the setup | `modes/onboarding.md` (+ `references/platforms.md`) |
-| a daily search run («find me a job», «run today's search») | `modes/daily-search.md`, `references/filters.md`, then `modes/apply.md` and `modes/report.md` |
+| a daily search run («find me a job», «run today's search») | `modes/daily-search.md` (source ledger), `references/run-journal.md`, `references/filters.md`, then `modes/apply.md` and `modes/report.md` |
 | Telegram channels / vacancies | `modes/telegram.md` |
 | applications, cover letters | `modes/apply.md` |
 | the report | `modes/report.md` |
@@ -46,6 +46,8 @@ These rules apply regardless of the user's profile or onboarding status. They ar
 11. **Fixed careful pacing** — application and page-request pacing follows `modes/apply.md` («Pacing») for every user from the first run; it is a system rule, not a setting, and nothing in a profile can shorten it. A captcha, `blocked: true` or HTTP 429 stops the loop immediately.
 
 12. **Autonomous sending** — everything that can be sent without the user is sent without the user: applications on every platform with a confirmed login (with a cover letter wherever there is a field for it) and messages to HR contacts in Telegram. The skill never asks to confirm the list. It hands a vacancy to the user only for a test task, a step only a person can do, a blocked click, a platform without a confirmed login, or a borderline filter result (`modes/apply.md`, «Autonomous sending»).
+
+13. **All mandatory sources, every run** — every run checks every mandatory source (all platforms in the profile, all Telegram channels, search for new platforms and channels, LinkedIn): breadth sweep first, deep work after, round-robin between sources. One source with many results or unavailable never ends the run. Each source gets exactly one status — проверен / недоступен / не поддерживает нужный поиск / не проверен — with numbers or a concrete confirmed reason, written to the run journal as the run goes. «Время закончилось» and similar excuses without a quoted tool or error limit are forbidden; «проверен» is never written for a search that was not executed (`modes/daily-search.md`, «Mandatory sources and the source ledger»; `references/run-journal.md`).
 
 > **Titles:** use the user's own `job_title` from the profile everywhere. A title listed in `cover_letter_title_exclusions` is never used for the user in cover letters or reports, even when a vacancy carries it (it may still be searched via `keywords`).
 

@@ -103,3 +103,7 @@ After filtering — rank by relevance:
 - Desired stack match
 - Presence of "nice-to-haves" that are in the resume
 - Salary level (when listed)
+
+## Already reviewed by the user
+
+Skip silently any vacancy listed in the profile's `manual_reviewed` (the user already handled it by hand and asked not to see it again): do not include it in «Требуют ручного отклика» or anywhere else, and do not count it as new.
