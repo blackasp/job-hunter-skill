@@ -4,6 +4,18 @@ All notable changes to Job Hunter skill are documented here.
 
 ---
 
+## [1.2.3] — 2026-11-11
+
+### Fixed
+- Report comments were one solid block of text. The summary is now a first line plus a list of sources; comments are written as short paragraphs or lists.
+- «Новые платформы» showed platforms that were already in the profile. Now only platforms found by the new-platform search of this run are shown there; results for known platforms go to the auto-apply, manual and blocked sections and to the per-source list.
+
+### Changed
+- `modes/report.md`: summary format, rules 9 and 10.
+- `job-hunter-skill.md`: operating principle «Readable text».
+
+---
+
 ## [1.2.2] — 2026-11-11
 
 ### Fixed

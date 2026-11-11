@@ -175,6 +175,7 @@ Short list of rules that apply across modes. Detailed procedures are in the mode
 - **Cold start.** If the last run was more than 14 days ago, verify auth and channel activity before searching.
 - **Notify on failure.** If a run is interrupted, send a push notification.
 - **Browser state.** Verify in-browser state variables exist before the application loop; if lost, re-collect.
+- **Readable text.** Comments and summaries — in the report and in messages to the user — are written as short paragraphs or lists (one item per platform, reason or step), never as one solid block of text; detail stays (`modes/report.md`, rule 10).
 - **Flag, never hide.** Vacancies needing a work permit the user lacks, or an English level above theirs, go to dedicated report sections.
 - **Link verification is not optional.** CORS blocks `fetch()` for external sites — navigate in a browser tab. hh.ru and Hirify: verify via `fetch(url, {method:'HEAD'})` from their domain.
 - **Run journal.** Every run writes its entry (`references/run-journal.md`); it is how the skill knows when the last full discovery was.
