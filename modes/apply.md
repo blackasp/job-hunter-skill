@@ -13,6 +13,15 @@
 - **The only reasons to hand a vacancy to the user** (list «Требуют ручного отклика» with a clickable link and the exact reason): a test task or assignment must be completed; the platform requires a step only a person can do (captcha, SMS or e-mail code, identity check, payment, file upload the skill cannot produce); the browser's safety check blocked the click; the platform has no confirmed login (search-only, Universal rule 9); the vacancy is borderline by the filters.
 - Record «отправлено без участия пользователя» in the run journal and the one-line summary of the report. Filters, search-only rule, and the pacing rules below still apply in full.
 
+### Cross-platform apply (mandatory)
+
+A vacancy found on one platform (aggregator, HireHi, Telegram, etc.) whose response leads to **another platform with a confirmed login** (hh.ru, Habr Career, etc.) is **applied to on that platform by the skill itself** — never moved to the manual list just because it was found elsewhere:
+
+1. Find the same vacancy on the target platform (by the link in the card; if the source does not expose it without a login, as on HireHi — search the target platform by company + title).
+2. Check that no response was sent yet (response-id set / «Вы откликнулись»). If already responded — skip and record it.
+3. Run the full filters on the target-platform page, then apply with a cover letter.
+4. Only vacancies where responding is truly impossible stay in «Требуют ручного отклика» with the exact reason (vacancy not found on a logged-in platform, hidden employer, test task, captcha, etc.).
+
 ### Browser safety checks
 
 Before the first apply click of the run, load the `chrome-browser` skill (`Skill('anthropic-skills:chrome-browser')`) so that site permissions and the extension are initialised. Use the normal browser tools (`computer`, `form_input`, `find`) to press apply buttons and fill forms.
