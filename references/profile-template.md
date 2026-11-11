@@ -24,6 +24,13 @@ telegram_vacancy_max_age_days: 30
 max_applications_per_source_per_run:          # optional cap of applications sent per source per run (e.g. 30); empty = no cap
 discovery_interval_days: 7         # full search for new channels/platforms
 
+## Threads (modes/threads.md)
+threads_queries: []                # search phrasings built from job_title / keywords
+threads_accounts: []               # aggregator / recruiter accounts read in full each run
+threads_last_checked_date:         # empty = never searched
+threads_first_run_days: 30
+threads_overlap_days: 3
+
 ## Filters (personal)
 user_blockers_tech: []             # block only if required / part of duties
 user_blockers_global: []           # block anywhere in the text

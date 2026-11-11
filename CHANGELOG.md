@@ -4,6 +4,16 @@ All notable changes to Job Hunter skill are documented here.
 
 ---
 
+## [1.3.0] — 2026-11-11
+
+### Added
+- Threads as a mandatory source, searched first in Phase A before hh.ru (`modes/threads.md`): several query phrasings, aggregator accounts, search window (first run 30 days, next runs overlap the previous one by 3 days).
+- Soft filter for Threads: office or Russia-only excludes a post, but a post that does not state the work format is kept with the label «формат не указан».
+- Personal criteria (from the profile) and system criteria (window, duplicates, vacancy vs job seeker, direct link) described separately for Threads.
+- Profile fields `threads_queries`, `threads_accounts`, `threads_last_checked_date`, `threads_first_run_days`, `threads_overlap_days`.
+
+---
+
 ## [1.2.4] — 2026-11-11
 
 ### Added
