@@ -4,10 +4,14 @@ All notable changes to Job Hunter skill are documented here.
 
 ---
 
-## [1.2.3] — 2026-11-11
+## [1.2.4] — 2026-11-11
 
 ### Added
-- Cross-platform apply: a vacancy found on one platform (e.g. HireHi) that leads to a logged-in platform (hh.ru) is applied to there by the skill; only truly impossible cases stay manual.
+- Cross-platform apply: a vacancy found on one platform (e.g. HireHi) that leads to a logged-in platform (hh.ru) is applied to there by the skill; only truly impossible cases stay manual. If the source (HireHi) does not show the link without a login, the skill searches the target platform by company + title.
+
+---
+
+## [1.2.3] — 2026-11-11
 
 ### Fixed
 - Report comments were one solid block of text. The summary is now a first line plus a list of sources; comments are written as short paragraphs or lists.
