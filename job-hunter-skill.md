@@ -18,7 +18,7 @@ This file holds what applies to every run: the rules, the settings model, and th
 | The user wants… | Load |
 |---|---|
 | to set up the search for the first time, or redo the setup | `modes/onboarding.md` (+ `references/platforms.md`) |
-| a daily search run («find me a job», «run today's search») | `modes/daily-search.md`, `references/filters.md`, then `modes/apply.md` and `modes/report.md` |
+| a daily search run («find me a job», «run today's search») | `modes/daily-search.md` (source ledger), `references/run-journal.md`, `references/filters.md`, then `modes/apply.md` and `modes/report.md` |
 | Telegram channels / vacancies | `modes/telegram.md` |
 | applications, cover letters | `modes/apply.md` |
 | the report | `modes/report.md` |
@@ -47,6 +47,8 @@ These rules apply regardless of the user's profile or onboarding status. They ar
 
 12. **Autonomous sending** — everything that can be sent without the user is sent without the user: applications on every platform with a confirmed login (with a cover letter wherever there is a field for it) and messages to HR contacts in Telegram. The skill never asks to confirm the list. It hands a vacancy to the user only for a test task, a step only a person can do, a blocked click, a platform without a confirmed login, or a borderline filter result (`modes/apply.md`, «Autonomous sending»).
 
+13. **All mandatory sources, every run** — every run checks every mandatory source (all platforms in the profile, all known Telegram channels, LinkedIn, plus the search for new platforms and channels on its cadence of `discovery_interval_days`, default 7): breadth sweep first, deep work after, round-robin between sources. One source with many results or unavailable never ends the run. Each source gets exactly one status — проверен / недоступен / не поддерживает нужный поиск / не проверен — with numbers or a concrete confirmed reason, written to the run journal as the run goes. «Время закончилось» and similar excuses without a quoted tool or error limit are forbidden; «проверен» is never written for a search that was not executed (`modes/daily-search.md`, «Mandatory sources and the source ledger»; `references/run-journal.md`).
+
 > **Titles:** use the user's own `job_title` from the profile everywhere. A title listed in `cover_letter_title_exclusions` is never used for the user in cover letters or reports, even when a vacancy carries it (it may still be searched via `keywords`).
 
 ---
@@ -68,7 +70,8 @@ Personal settings are NOT universal defaults. They are configured by each user d
 - **Work permit countries** — where user can legally work
 - **English level**
 - **Platform vacancy freshness** — how many days back vacancies on job platforms count (`max_vacancy_age_days`)
-- **Full-discovery interval** — how often to search for new Telegram channels and platforms (`discovery_interval_days`, default 3)
+- **Cap on applications per source per run** — `max_applications_per_source_per_run` (optional, e.g. 30): limits how many applications are sent to each source in one run; the search of all sources is never limited, the leftover vacancies are postponed to the next run (`modes/daily-search.md`, «Run order rules»)
+- **Full-discovery interval** — how often to search for new Telegram channels and platforms (`discovery_interval_days`, default 7)
 - **Cover-letter title exclusions** — titles never used for the user in letters (`cover_letter_title_exclusions`)
 - **Resume link** — `resume_url`, sent to HR contacts in Telegram messages
 - **Telegram vacancy freshness** — how many days back vacancies in Telegram channels count (`telegram_vacancy_max_age_days`)
@@ -146,7 +149,7 @@ The profile file (see «Where the profile lives»):
 - `user_blockers_global`: industries, employers, company types, formats blocked anywhere in the text
 - `role_exclusions`: roles excluded by title
 - `cover_letter_title_exclusions`: titles never used for the user in cover letters
-- `discovery_interval_days`: days between full discovery runs (default 3); `last_full_discovery_date`
+- `discovery_interval_days`: days between full discovery runs (default 7); `last_full_discovery_date`
 - `run_journal_url`: link to the run journal (see `references/run-journal.md`)
 - `work_permit_countries`: list of countries where user can legally work without sponsorship
 - `english_level`: user's English level (A1–C2)

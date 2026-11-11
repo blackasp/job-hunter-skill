@@ -78,7 +78,7 @@ Let's set up your search profile. Answer everything at once — I'll remember it
     (Vacancies requiring a higher level than yours will be flagged in the report.)
 14. Telegram vacancies: how fresh should they be? (vacancies and channels older than this many days are skipped; default 30 days): ___
 15. Job platforms (hh.ru, LinkedIn, etc.): how fresh should vacancies be? (vacancies older than this many days are skipped; default 30 days): ___
-16. How often should the skill do a full search for new Telegram channels and platforms? (every N days; between those runs it only re-reads the posts of channels it already knows; default 3 days): ___
+16. How often should the skill do a full search for new Telegram channels and platforms? (every N days; between those runs it only re-reads the posts of channels it already knows; default 7 days): ___
 17. Is there a job title you do NOT want to be called in cover letters, even if a vacancy carries it? (optional): ___
 ```
 
@@ -101,7 +101,7 @@ After the user responds:
   - `user_blockers_global: [list]` — answer 8b (matched in the full text)
   - `role_exclusions: [list]` — answer 8c (matched in the title)
   - `resume_url: [URL]` — link from question 11
-  - `discovery_interval_days: [N]` — default 3
+  - `discovery_interval_days: [N]` — default 7
   - `cover_letter_title_exclusions: [list]`
   - `work_permit_countries: [list]`
   - `english_level: [B1/B2/C1/etc]`

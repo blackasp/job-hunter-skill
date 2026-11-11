@@ -17,11 +17,19 @@ The journal answers three questions: *when was the last run, when was the last f
 | Тип | live / unattended; quick / full discovery |
 | Старт – конец | local time with UTC offset |
 | Шаги, длительность | journal check; platforms; Telegram; web search for platforms; filtering; applications (including waits); report; journal |
+| Реестр источников | one line per mandatory source: `источник — статус (проверен / недоступен / не поддерживает нужный поиск / не проверен) — числа или причина с подтверждением` (see `modes/daily-search.md`, «Mandatory sources and the source ledger») |
 | По площадкам | `[Platform]: N страниц, M проверено, K прошли фильтр` |
+| Новые источники | new platforms and Telegram channels found, verified, added or rejected, with the reason |
+| Действия | applications sent (with / without letter), HR messages sent, handed to the user (test, form questions, captcha), with counts |
+| Пропуски | every source or step not done, with the confirmed reason (error text, status, page text, absent tool, quoted limit) and what is needed to continue |
 | Итоги | passed filter; applied (HTTP 200); manual; test assignments; blocked |
 | Ошибки / блокировки | platform, kind (captcha, 429, login, unreachable, safety check), time |
 | Подтверждение | asked / treated as given in advance |
 | Следующая полная проверка | `last_full_discovery_date + discovery_interval_days` |
+
+## When it is written
+
+The journal document is created at the start of the first run (Step 0) and the row for the current run is opened at the start with the source ledger (all sources «не начат»). Each ledger line is updated right after its source is processed, so an interrupted run still shows what was done and what was not. The final fields (totals, end time, next full check) are filled at the end. Never fill a line from memory or estimate it: write only what was observed.
 
 ## How it is used
 
