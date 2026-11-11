@@ -22,6 +22,19 @@ A vacancy found on one platform (aggregator, HireHi, Telegram, etc.) whose respo
 3. Run the full filters on the target-platform page, then apply with a cover letter.
 4. Only vacancies where responding is truly impossible stay in «Требуют ручного отклика» with the exact reason (vacancy not found on a logged-in platform, hidden employer, test task, captcha, etc.).
 
+### Resolve every redirect before listing a vacancy as manual (mandatory)
+
+A vacancy may enter the manual list (or an aggregator list such as HireHi) **only after the skill has checked where its response button leads** and has finished the work that does not need the user:
+
+1. **Open the response button** (HireHi: «Отклик на hh», the same on other aggregators) and see where it leads. Buttons that lead to a platform with a confirmed login (hh.ru, Habr Career) are resolved by the skill, not listed. Buttons that spend a limited quota (HireHi «Отклик в Telegram. Осталось: N») are not clicked just to look; they are listed as «требует действия» with the quota noted.
+2. **Check for an existing response** on the target platform before listing. A vacancy where the user has already responded or been rejected is **not listed at all**; it is only counted in the run journal as «уже есть отклик на hh.ru».
+3. **Run the full filters on the target-platform page** (1С, DWH/ETL, billing, Camunda-type systems, RU-only, office-only, junior). A vacancy that fails a filter is **not listed**; it is recorded in the report as filtered, with the reason and a link.
+4. **Apply with a cover letter** if the vacancy passes the filters and has no response yet.
+5. Only what remains after steps 1–4 goes to the list, with the exact reason why the skill could not respond itself.
+6. **Re-check old lists.** When a list from an earlier run is shown again, each item is re-checked with steps 1–3 first; items that now have a response are removed from the list and the counter in the heading is updated.
+
+Reason: on 2026-11-11 a HireHi list of 44 vacancies contained 16 vacancies that already had a response on hh.ru and one that failed the 1С filter. The user found this by clicking through the list manually.
+
 ### Browser safety checks
 
 Before the first apply click of the run, load the `chrome-browser` skill (`Skill('anthropic-skills:chrome-browser')`) so that site permissions and the extension are initialised. Use the normal browser tools (`computer`, `form_input`, `find`) to press apply buttons and fill forms.

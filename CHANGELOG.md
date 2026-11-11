@@ -4,6 +4,13 @@ All notable changes to Job Hunter skill are documented here.
 
 ---
 
+## [1.3.1] — 2026-11-11
+
+### Added
+- «Resolve every redirect before listing a vacancy as manual» (`modes/apply.md`): before a vacancy goes to the manual list or an aggregator list, the skill opens its response button, checks for an existing response on the target platform, runs the full filters there and applies itself when possible. Vacancies with an existing response are not listed at all; filtered ones go to the report with a reason; old lists are re-checked before being shown again.
+
+---
+
 ## [1.3.0] — 2026-11-11
 
 ### Added
