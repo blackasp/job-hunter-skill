@@ -21,6 +21,7 @@ work_permit_countries: []
 ## Freshness and cadence
 max_vacancy_age_days: 30           # platforms
 telegram_vacancy_max_age_days: 30
+max_candidates_per_run:            # optional cap of candidates processed per run (e.g. 30); empty = no cap
 discovery_interval_days: 7         # full search for new channels/platforms
 
 ## Filters (personal)

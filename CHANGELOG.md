@@ -13,6 +13,7 @@ All notable changes to Job Hunter skill are documented here.
 - `references/run-journal.md`: journal created at Step 0 and written incrementally; fields for source ledger, new sources, actions and skips.
 - `modes/report.md`: summary line carries the status of every source (structure unchanged); `modes/telegram.md`: concrete reasons when HR cannot be contacted; `modes/apply.md`: applications start only after the sweep; `references/filters.md`: `manual_reviewed` skipped.
 - New universal rule 13.
+- Optional per-run cap `max_candidates_per_run`: limits deep processing, never the sweep; the remainder is recorded as postponed and goes first next run.
 
 ---
 
