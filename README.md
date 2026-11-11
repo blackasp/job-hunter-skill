@@ -25,12 +25,18 @@ Works for any profession, any country, any language.
 - **HTTP 200-only counting** — 403 = already applied, 429 = rate limit stop, others = failed; never counts errors
 - **Captcha detection** — `{blocked: true}` stops the entire application loop immediately + PushNotification
 - **Previously applied check** — loads negotiations history via DOM parsing before starting
-- **Rate limit guard** — 800ms delay between applications
+- **Careful pacing built in** — human-like random delays from the first run, no setting to change (5–12 s per application, 45–90 s after every 5, 5–8 min after every 20, 4–8 s between result pages); after any captcha or block the delays on that platform double for 7 days
 - **Network error resilience** — try/catch on all fetch calls; single error never aborts the run
 - **User name from API** — always fetched from `api.hh.ru/me`, never guessed
-- **All interview invitations** — shown without date filter
-- **Configurable application limit** — set at onboarding: unlimited or N per day; changeable anytime with a single phrase
+- **Interview invitations** — the last 2 months, newest first, with company, role, link and date
+- **Application limit** — none by default; an optional daily limit can be set at any time with a single phrase
 - **Zero results explained** — if 0 vacancies pass filters, the report includes a full breakdown by filter and a suggestion to relax the top one
+- **All result pages, stop on freshness** — every page of a platform is read, newest first, until a whole page is older than your freshness limit
+- **Search-only on platforms without a login** — newly found platforms are searched and reported («Требуется регистрация») but never applied to or registered on
+- **Telegram channels verified by their posts** — a channel is listed only if a relevant vacancy of the last N days was actually seen in it; unreadable channels are reported separately
+- **Personal settings kept apart from the rules** — profession, keywords, geography, blockers, freshness, pacing and the salary question are per-user; a new user starts with no filters
+- **Technology blockers read in the right place** — only the «Requirements» and «Responsibilities» blocks; «nice to have» does not block
+- **Run journal** — start/end of every step, pages and vacancies per platform, blocks; decides when the next full discovery is due
 - **Cold start detection** — if last run was 14+ days ago, re-checks platform auth and channel activity before searching
 
 ---
@@ -57,8 +63,18 @@ Works for any profession, any country, any language.
 
 1. Open **claude.ai → Settings → Skills**
 2. Click **Add skill**
-3. Copy the contents of [`SKILL.md`](./SKILL.md) and paste
+3. Upload the skill **as a folder** (or a zip) containing `job-hunter-skill.md` as the entry file together with the `modes/` and `references/` folders. The entry file loads the modes it needs; if only the entry file is installed, it reads the rest from this repository.
 4. Save
+
+### Structure
+
+```
+job-hunter-skill.md        entry file: rules, settings model, map of modes
+modes/                     onboarding, daily-search, telegram, apply, report, creative
+references/                platforms, filters, run-journal, profile-template
+```
+
+Personal settings are never stored in this repository (it is public); `references/profile-template.md` is a neutral template of the fields.
 
 ---
 
@@ -98,18 +114,18 @@ Set up a scheduled task in Claude Code — the skill will run automatically ever
 ## What happens on each run
 
 1. Checks resume for changes
-2. **Dynamically discovers platforms** via web search (never uses a fixed hardcoded list)
-3. Searches all platforms and Telegram channels
+2. Opens the run journal and decides between a quick scan and a full discovery of new channels and platforms (every 3 days by default)
+3. Searches all platforms (all pages, newest first) and re-reads Telegram channels
 4. Filters and ranks by your profile
-5. Asks for confirmation before applying (or applies automatically in scheduled mode)
-6. Submits applications with unique cover letters
-7. Creates a report artifact with direct links — **always created, even if 0 vacancies found**
+5. Asks for confirmation before applying in a live session (treated as given in advance in a scheduled run)
+6. Submits applications with short unique cover letters (4–5 sentences) at a human pace
+7. Creates a report with direct links — **always created, even if 0 vacancies found** — and writes the journal row
 
 **Every phase is mandatory.** If a phase fails for technical reasons, the skill logs it in the report and continues automatically — it never stops mid-run to ask questions. This makes it safe to run as a scheduled task while you sleep.
 
 ---
 
-## For artists — Phase 6 (independent from job search)
+## For artists — creative opportunities (independent from job search)
 
 A separate mode for creative practitioners. Runs independently — has its own profile, its own report, never mixes with the job search.
 
@@ -230,12 +246,18 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full history of changes.
 - **Счётчик только по HTTP 200** — 403 = уже откликались, 429 = стоп, остальное = ошибка; ошибки не считаются
 - **Детекция капчи** — `{blocked: true}` останавливает весь цикл откликов + PushNotification
 - **Проверка ранее поданных** — загружает историю переговоров через DOM-парсинг перед стартом
-- **Защита от rate limit** — 800мс пауза между откликами
+- **Осторожный темп встроен** — случайные задержки как у человека с первого запуска, настройки нет (5–12 с на отклик, 45–90 с после каждых 5, 5–8 мин после каждых 20, 4–8 с между страницами выдачи); после любой капчи или блокировки задержки на этой площадке удваиваются на 7 дней
 - **Устойчивость к сетевым ошибкам** — try/catch на все fetch-запросы; одна ошибка не прерывает весь запуск
 - **Имя из API** — всегда из `api.hh.ru/me`, никогда не угадывается
 - **Все приглашения** — показываются без фильтра по дате
-- **Настраиваемый лимит откликов** — задаётся при онбординге: без лимита или N в день; меняется в любой момент одной фразой
+- **Лимит откликов** — по умолчанию нет; необязательный дневной лимит можно задать одной фразой одной фразой
 - **Объяснение нулевого результата** — если 0 вакансий прошло фильтры, отчёт содержит разбивку по каждому фильтру и предложение ослабить главный
+- **Все страницы выдачи, остановка по свежести** — читаются все страницы площадки, от новых к старым, пока вся страница не окажется старше порога свежести
+- **Только поиск на площадках без входа** — новые площадки ищутся и попадают в отчёт («Требуется регистрация»), но скилл не откликается и не регистрируется
+- **Telegram-каналы проверяются по постам** — канал в списке только если в нём реально видна релевантная вакансия за последние N дней; недоступные каналы указываются отдельно
+- **Личные настройки отдельно от правил** — профессия, слова, география, блокеры, свежесть, темп откликов и вопрос о зарплате задаются на пользователя; новый пользователь начинает без фильтров
+- **Блокеры-технологии ищутся в нужном месте** — только в блоках «Требования» и «Обязанности»; «будет плюсом» не блокирует
+- **Журнал запусков** — время каждого шага, страницы и вакансии по площадкам, блокировки; по нему определяется срок следующей полной проверки
 - **Определение холодного старта** — если последний запуск был 14+ дней назад, сначала проверяет авторизацию на платформах и активность каналов
 
 ---
@@ -262,8 +284,18 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full history of changes.
 
 1. Открой **claude.ai → Settings → Skills**
 2. Нажми **Add skill**
-3. Скопируй содержимое файла [`SKILL.md`](./SKILL.md) и вставь
+3. Загрузи скилл **папкой** (или zip): входной файл `job-hunter-skill.md` вместе с папками `modes/` и `references/`. Входной файл подгружает нужные режимы; если установлен только он, остальное читается из этого репозитория.
 4. Сохрани
+
+### Структура
+
+```
+job-hunter-skill.md        входной файл: правила, модель настроек, карта режимов
+modes/                     онбординг, ежедневный поиск, telegram, отклики, отчёт, творчество
+references/                площадки, фильтры, журнал запусков, шаблон профиля
+```
+
+Личные настройки в этом репозитории не хранятся (он публичный); `references/profile-template.md` — нейтральный шаблон полей.
 
 ---
 
@@ -303,18 +335,18 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full history of changes.
 ## Что происходит при каждом запуске
 
 1. Проверяет резюме на изменения
-2. **Динамически находит платформы** через веб-поиск (никакого жёстко заданного списка)
-3. Ищет вакансии на всех платформах и в Telegram-каналах
+2. Открывает журнал запусков и выбирает: быстрый просмотр или полный поиск новых каналов и площадок (по умолчанию раз в 3 дня)
+3. Ищет вакансии на всех площадках (все страницы, от новых к старым) и перечитывает Telegram-каналы
 4. Фильтрует и ранжирует по твоему профилю
-5. Спрашивает подтверждение перед откликами (или откликается автоматически при запуске по расписанию)
-6. Отправляет отклики с уникальными письмами
-7. Создаёт отчёт-артефакт — **всегда, даже если 0 вакансий найдено**
+5. В живой сессии спрашивает подтверждение перед откликами (в запуске по расписанию оно считается данным заранее)
+6. Отправляет отклики с короткими уникальными письмами (4–5 предложений) в человеческом темпе
+7. Создаёт отчёт — **всегда, даже если 0 вакансий найдено** — и записывает строку в журнал
 
 **Каждая фаза обязательна.** Если фаза не выполнилась по технической причине — скилл записывает это в отчёт и идёт дальше автоматически. Никаких остановок и вопросов посреди запуска — можно ставить на ночное расписание.
 
 ---
 
-## Для художников — Фаза 6 (независимо от поиска работы)
+## Для художников — творческие возможности (независимо от поиска работы)
 
 Отдельный режим для творческих практиков. Запускается независимо — свой профиль, свой отчёт, никогда не смешивается с поиском работы.
 
