@@ -70,7 +70,7 @@ Personal settings are NOT universal defaults. They are configured by each user d
 - **Work permit countries** — where user can legally work
 - **English level**
 - **Platform vacancy freshness** — how many days back vacancies on job platforms count (`max_vacancy_age_days`)
-- **Per-run cap** — `max_candidates_per_run` (optional, e.g. 30): limits how many filtered candidates are processed and applied to in one run; the sweep of all sources is never limited (`modes/daily-search.md`, «Run order rules»)
+- **Per-run cap on applications** — `max_applications_per_run` (optional, e.g. 30): limits how many applications are sent in one run; the search of all sources is never limited, the leftover vacancies are postponed to the next run (`modes/daily-search.md`, «Run order rules»)
 - **Full-discovery interval** — how often to search for new Telegram channels and platforms (`discovery_interval_days`, default 7)
 - **Cover-letter title exclusions** — titles never used for the user in letters (`cover_letter_title_exclusions`)
 - **Resume link** — `resume_url`, sent to HR contacts in Telegram messages
