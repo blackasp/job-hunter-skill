@@ -734,7 +734,7 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 
 ### Deep scan procedure
 
-- Re-verify current Telegram channels by Phase 7 (remove ones with no relevant vacancy in the last 60 days)
+- Re-verify current Telegram channels by Phase 7 (remove ones with no relevant vacancy in the last 30 days)
 - Search for new Telegram channels on tgstat.ru / telemetr.io
 - Run an expanded web search for new niche platforms and aggregators:
   ```
@@ -935,7 +935,7 @@ Channel title and subscribers: `.tgme_channel_info_header_title`, `.tgme_channel
 
 ### Step 1: Clarify field and role
 
-Use `job_title` and `keywords` from the profile. If the profile has none (new user, or the user names another field in the request), ask once: «Какая сфера и роль? (например, системный аналитик, дизайнер, продакт-менеджер)» and use the answer for this search; save it to the profile only if the user is doing onboarding. The freshness period is 2 months (60 days) unless the user states another.
+Use `job_title` and `keywords` from the profile. If the profile has none (new user, or the user names another field in the request), ask once: «Какая сфера и роль? (например, системный аналитик, дизайнер, продакт-менеджер)» and use the answer for this search; save it to the profile only if the user is doing onboarding. Freshness: a channel must have a relevant vacancy within the last 30 days to be verified; vacancies are collected from verified channels for the last 2 months (60 days). The user can state other periods.
 
 ### Step 2: Discover candidate channels
 
@@ -951,11 +951,11 @@ Only real channels found in sources count as candidates. Never invent a channel 
 Open `https://t.me/s/<channel>` in the browser. A channel is **verified** only if ALL of these hold:
 1. The posts can be read (preview works).
 2. Among the last ~20 posts most are vacancies (not course ads, spam or news).
-3. At least one vacancy post for the user's field and role is dated within the last 60 days (exact `datetime` seen on the page).
+3. At least one vacancy post for the user's field and role is dated within the last 30 days (exact `datetime` seen on the page).
 
-Page back with `?before=<oldest id>` up to 5 pages when the first page does not reach 60 days. Record for the channel: title, link, specialization (as actually seen in posts, not as in the description), date and link of the freshest relevant vacancy, approximate subscribers if shown.
+Page back with `?before=<oldest id>` up to 5 pages when the first page does not reach 30 days. Record for the channel: title, link, specialization (as actually seen in posts, not as in the description), date and link of the freshest relevant vacancy, approximate subscribers if shown.
 
-Statuses: **проверен** (all conditions met), **нет свежих релевантных** (readable, but nothing relevant in 60 days — do not include in the list), **не удалось проверить** (preview closed, private, group or page not loading — list separately with the reason). A channel is never shown as verified because of its description alone.
+Statuses: **проверен** (all conditions met), **нет свежих релевантных** (readable, but nothing relevant in 30 days — do not include in the list), **не удалось проверить** (preview closed, private, group or page not loading — list separately with the reason). A channel is never shown as verified because of its description alone.
 
 ### Step 4: Collect vacancies
 
@@ -963,7 +963,7 @@ From verified channels collect vacancy posts from the last 60 days. Apply the fi
 
 ### Output format
 
-1. **Параметры поиска:** роль/сфера, период свежести (по умолчанию 60 дней), дата проверки.
+1. **Параметры поиска:** роль/сфера, период свежести вакансий (по умолчанию 60 дней), порог свежести каналов (30 дней), дата проверки.
 2. **Проверенные каналы** — table: Название | Ссылка | Специализация | Свежая релевантная вакансия (дата + ссылка на пост).
 3. **Свежие вакансии** — table: Должность | Компания | Дата публикации | Кратко | Ссылка на пост. Newest first.
 4. **Ограничения поиска:** каналы, которые не удалось проверить (причина), каналы без свежих релевантных вакансий, случаи, когда свежесть не удалось подтвердить, и если результатов мало — прямо об этом сказать.
