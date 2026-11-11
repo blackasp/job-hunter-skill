@@ -16,7 +16,6 @@ Priority logic (determined dynamically by profession + geo). Select the most rel
 - [talent-move.ru](https://talent-move.ru) — IT и аналитика
 - [JobRocket](https://jobrocket.ru/ru/) — IT-вакансии с вилками и контактами рекрутёров (бета); удалённые помечены «Удаленно», свободного поиска нет — фильтр по категориям и технологиям
 - [HireHi](https://hirehi.ru/) — агрегатор IT и digital вакансий; есть фильтр удалённого формата и поиск с операторами (+ обязательно, - исключить); вход по коду на почту или через Яндекс
-- [cvgo.app](https://cvgo.app/) — платформа поиска вакансий; добавлена пользователем 2026-11-11, формат поиска и откликов уточняется при первом запуске
 
 **Level 1 — International IT / remote-friendly:**
 - [LinkedIn](https://linkedin.com/jobs) — универсальная международная площадка
