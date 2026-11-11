@@ -18,7 +18,7 @@ These rules apply regardless of the user's profile or onboarding status. They ar
 3. **All links must be clickable** — in documents use `[anchor text](https://full-url)` format. Never put bare URLs without hyperlink markup.
 4. **All links must be verified** — after composing any document with vacancy links, verify EVERY link by navigating to it in the browser (or HEAD request). If a site returns ERR_CONNECTION_RESET, 404, or «Не удается получить доступ» — remove that vacancy/line from the document entirely or mark clearly as «⚠️ сайт недоступен». A document with unverified links is not complete.
 5. **Cover letter — 5-part mandatory structure** — see Cover Letter Framework section. Total 7–10 sentences. No salary.
-6. **Telegram vacancies — always include direct message link** — for EVERY vacancy found in a Telegram channel, include the direct link to the specific message in format `https://t.me/channelname/messageID`. Without this link the vacancy row is incomplete. Never report a TG vacancy without the direct message link. To get the link: in web.telegram.org right-click (or long-press) the post → «Copy link» → result: `https://t.me/channelname/NNN`. If the link cannot be obtained — do NOT include that vacancy in the report.
+6. **Telegram vacancies — always include direct message link** — for EVERY vacancy found in a Telegram channel, include the direct link to the specific message in format `https://t.me/channelname/messageID`. Without this link the vacancy row is incomplete. Never report a TG vacancy without the direct message link. To get the link: on the public preview page `https://t.me/s/channelname` it is the `data-post` attribute of the message; in web.telegram.org right-click (or long-press) the post → «Copy link» → result: `https://t.me/channelname/NNN`. If the link cannot be obtained — do NOT include that vacancy in the report.
 7. **Report format is locked** — the daily report structure defined in Step 7 must not be changed without explicit user instruction.
 8. **Apply personal filters strictly** — once a user has configured exclusion rules in their profile, apply them consistently to every vacancy, every run, without exception.
 9. **Search-only on platforms without a confirmed login** — on any platform where the user is not registered or logged in (including every newly discovered platform), only search and report matching vacancies. Never apply, never register or create accounts, never enter credentials. Such vacancies go to the report section «Новые платформы — результаты поиска» with the status «Требуется регистрация».
@@ -265,17 +265,9 @@ Show the user the combined list (fixed + newly discovered) with a reason for eac
 
 ### Phase 2b: Telegram channel discovery
 
-**Priority channels (always check on every run, regardless of discovery step):**
-- @jobs_it — IT job postings channel (https://t.me/jobs_it)
-- @runello_jobs_analyst — analyst-specific job postings (https://t.me/runello_jobs_analyst)
-- @foranalysts — analyst community with job postings
+The skill finds and verifies Telegram channels itself, for ANY profession. Full procedure, verification rules and output format: **Phase 7: Telegram vacancy search**. At onboarding run Phase 7 steps 1–4 (role clarification, discovery, verification, channel list) and save the verified channels to the profile (`telegram_channels`: name, link, specialization, date of last relevant vacancy, date checked). Channels already saved in the profile are re-checked on every run (Step 3).
 
-For additional channel discovery: go to tgstat.ru and telemetr.io. Search using the user's profession keywords.
-
-**Live channel criteria:** last post ≤ 7 days ago, ≥ 10 job posts/month, > 500 subscribers.
-**Skip if:** last post > 30 days, < 3 job posts/month, mostly spam or course ads.
-
-Find 5–15 live channels. Save to profile with date of last post. Open in web.telegram.org to verify access.
+Never hardcode channels in this skill: channels depend on the user's profession and live only in their profile.
 
 ---
 
@@ -369,11 +361,11 @@ Inspect the actual key names (they may differ from the documented API). If this 
 
 ### Step 3: Telegram channel search
 
-Open web.telegram.org. Open each channel. Review posts from the last 24h (or since last run). Extract job links. If channels mention other active channels — add to check list.
+For each channel in the profile's Telegram channel list (`telegram_channels` or the «Telegram Channels» section), read the posts since the last run using the method from Phase 7 (public preview `https://t.me/s/<channel>` in the browser; `web.telegram.org` only as a fallback). Extract vacancy posts, apply the filters from Step 5, and add matches to the pool. If channels mention other active channels — verify them via Phase 7 before adding to the list.
 
-**TG vacancy links — mandatory:** For every vacancy post found in any TG channel, copy the direct message link via right-click → «Copy link» in web.telegram.org (result: `https://t.me/channelname/NNN`). Include this link in the report for every vacancy. If the link cannot be obtained — do NOT include that vacancy in the report.
+**TG vacancy links — mandatory:** every vacancy from a TG channel must carry the direct link to the post `https://t.me/channelname/NNN` (on the preview page it is the `data-post` attribute of the message; in web.telegram.org: right-click → «Copy link»). If the link cannot be obtained — do NOT include that vacancy in the report.
 
-**Fallback:** If web.telegram.org is unavailable or login fails — skip Telegram for this run, note in report, continue with other sources.
+**Fallback:** if neither the preview page nor web.telegram.org can be opened — skip Telegram for this run, note it in the report, continue with other sources.
 
 ### Step 4: LinkedIn search
 
@@ -732,7 +724,7 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 
 ### Deep scan procedure
 
-- Check activity of current Telegram channels (remove ones with last post > 30 days)
+- Re-verify current Telegram channels by Phase 7 (remove ones with no relevant vacancy in the last 60 days)
 - Search for new Telegram channels on tgstat.ru / telemetr.io
 - Run an expanded web search for new niche platforms and aggregators:
   ```
@@ -906,6 +898,70 @@ Create a separate Claude Docs document (never mix with job search report):
 
 ---
 
+## Phase 7: Telegram vacancy search (on request, and at onboarding)
+
+Trigger phrases: «найди телеграм-каналы с вакансиями», «найди вакансии в телеграме», «find job Telegram channels». Works for any profession. It does not change the locked daily report format (Step 7).
+
+### What tools actually work (checked in practice)
+
+| Task | Works | Does not work / limits |
+|------|-------|------------------------|
+| Find channels | WebSearch / WebFetch (queries, tgstat.ru, telemetr.io, channel lists, mentions in other channels) | Catalog pages may be blocked or stale; a catalog description is NOT verification |
+| Read posts of a public channel | Browser (Claude in Chrome or built-in browser): open `https://t.me/s/<channel>`, read the DOM with JavaScript: `data-post` (post id → link), `time[datetime]` (exact date), message text; older posts via `?before=<id>` | Only public channels with the web preview enabled |
+| Read posts via other tools | — | The shell has no access to t.me; WebFetch returns only times without dates, so it cannot confirm freshness. Use it only to see that a page exists |
+| Private channels, groups, comment threads, channels with the preview disabled | — | Cannot be verified automatically. List them separately as «не удалось проверить», never as verified |
+
+Dates on the preview page are in UTC. If no browser is available at all — say so, give only discovered (unverified) channels marked as such, and do not report any vacancies.
+
+JavaScript for reading a loaded preview page:
+```js
+[...document.querySelectorAll('.tgme_widget_message')].map(m => ({
+  post: m.getAttribute('data-post'),                       // channel/ID
+  date: m.querySelector('time')?.getAttribute('datetime'), // exact date, UTC
+  text: m.querySelector('.tgme_widget_message_text')?.innerText || ''
+}))
+```
+Channel title and subscribers: `.tgme_channel_info_header_title`, `.tgme_channel_info_counter .counter_value`.
+
+### Step 1: Clarify field and role
+
+Use `job_title` and `keywords` from the profile. If the profile has none (new user, or the user names another field in the request), ask once: «Какая сфера и роль? (например, системный аналитик, дизайнер, продакт-менеджер)» and use the answer for this search; save it to the profile only if the user is doing onboarding. The freshness period is 2 months (60 days) unless the user states another.
+
+### Step 2: Discover candidate channels
+
+- Web search in the user's language and English, e.g. `«<роль> вакансии телеграм канал»`, `«<profession> jobs telegram channel»`, `«вакансии <сфера> t.me»`, for the current year.
+- Catalogs: tgstat.ru, telemetr.io (search by role keywords); lists and recommendations in articles, communities and forums.
+- Channels mentioned or reposted inside already verified channels.
+- Channels already in the user's profile.
+
+Only real channels found in sources count as candidates. Never invent a channel name or link.
+
+### Step 3: Verify each candidate by its posts
+
+Open `https://t.me/s/<channel>` in the browser. A channel is **verified** only if ALL of these hold:
+1. The posts can be read (preview works).
+2. Among the last ~20 posts most are vacancies (not course ads, spam or news).
+3. At least one vacancy post for the user's field and role is dated within the last 60 days (exact `datetime` seen on the page).
+
+Page back with `?before=<oldest id>` up to 5 pages when the first page does not reach 60 days. Record for the channel: title, link, specialization (as actually seen in posts, not as in the description), date and link of the freshest relevant vacancy, approximate subscribers if shown.
+
+Statuses: **проверен** (all conditions met), **нет свежих релевантных** (readable, but nothing relevant in 60 days — do not include in the list), **не удалось проверить** (preview closed, private, group or page not loading — list separately with the reason). A channel is never shown as verified because of its description alone.
+
+### Step 4: Collect vacancies
+
+From verified channels collect vacancy posts from the last 60 days. Apply the filters from Step 5 (universal + the user's personal filters). For each vacancy give: title, date of the post, company, short summary (1–2 lines), and the direct link to the post `https://t.me/channelname/NNN`. A vacancy without a direct post link is not included. Remove duplicates (same company + role across channels; keep the earliest post and mention the others).
+
+### Output format
+
+1. **Параметры поиска:** роль/сфера, период свежести (по умолчанию 60 дней), дата проверки.
+2. **Проверенные каналы** — table: Название | Ссылка | Специализация | Свежая релевантная вакансия (дата + ссылка на пост).
+3. **Свежие вакансии** — table: Должность | Компания | Дата публикации | Кратко | Ссылка на пост. Newest first.
+4. **Ограничения поиска:** каналы, которые не удалось проверить (причина), каналы без свежих релевантных вакансий, случаи, когда свежесть не удалось подтвердить, и если результатов мало — прямо об этом сказать.
+
+All links clickable `[text](url)`. Show only what was actually verified. Never invent channels, vacancies, dates or links; if there are few results, say so.
+
+---
+
 ## What is stored in memory
 
 File `/areas/job-hunter-profile.md`:
@@ -927,7 +983,7 @@ File `/areas/job-hunter-profile.md`:
 - `english_level`: user's English level (A1–C2)
 - Resume: file path / link / hash of last version / extracted skills and stack
 - Platform list with priorities and full domain lists for permissions
-- Telegram channel list with date of last post and last check
+- `telegram_channels`: verified channels (name, link, specialization, date of last relevant vacancy, date checked)
 - Application history: vacancy ID, company, role, date, status
 - `last_run_date`: date of last Phase 3 run
 - `creative_profile`: medium, career stage, geography, what to find, deadline horizon (Phase 6)
