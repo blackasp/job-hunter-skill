@@ -41,6 +41,7 @@ Personal settings are NOT universal defaults. They are configured by each user d
 - **Remote/office/hybrid preference**
 - **Work permit countries** — where user can legally work
 - **English level**
+- **Platform vacancy freshness** — how many days back vacancies on job platforms count (`max_vacancy_age_days`)
 - **Telegram vacancy freshness** — how many days back vacancies in Telegram channels count (`telegram_vacancy_max_age_days`)
 - **Resume location**
 - **Platform list** — which platforms to search
@@ -75,6 +76,7 @@ When the user updates a setting — apply the change immediately to the profile 
 - Гео-исключения: [geo_exclusions]
 - Разрешение на работу: [work_permit_countries]
 - Уровень английского: [english_level]
+- Свежесть вакансий на платформах: [max_vacancy_age_days] дн.
 - Свежесть вакансий в Telegram: [telegram_vacancy_max_age_days] дн.
 ```
 
@@ -154,6 +156,7 @@ Let's set up your search profile. Answer everything at once — I'll remember it
 13. English level: A1 / A2 / B1 / B2 / C1 / C2 / Native
     (Vacancies requiring a higher level than yours will be flagged in the report.)
 14. Telegram vacancies: how fresh should they be? (vacancies and channels older than this many days are skipped; default 30 days): ___
+15. Job platforms (hh.ru, LinkedIn, etc.): how fresh should vacancies be? (vacancies older than this many days are skipped; default 30 days): ___
 ```
 
 After the user responds:
@@ -174,7 +177,8 @@ After the user responds:
   - `user_blockers: [list]` — user's own exclusion list (technologies, industries, etc.)
   - `work_permit_countries: [list]`
   - `english_level: [B1/B2/C1/etc]`
-  - `telegram_vacancy_max_age_days: [N]` — default 30 if the user does not answer
+  - `max_vacancy_age_days: [N]` — freshness of vacancies on platforms, default 30 if the user does not answer
+  - `telegram_vacancy_max_age_days: [N]` — freshness of Telegram vacancies, default 30 if the user does not answer
 
 ---
 
@@ -298,7 +302,7 @@ If the user says "update resume" or uploads a new file — process immediately, 
 For each platform in the saved list (priority order):
 1. Open in browser (using saved sessions)
 2. Apply search filters from profile (use `keywords` from profile, not hardcoded values)
-3. Collect vacancies not older than [profile setting, default 3 days]
+3. Collect vacancies not older than `max_vacancy_age_days` from the profile (default 30 days if not set)
 4. Exclude already-seen (compare with history in memory)
 5. Add to shared pool
 
@@ -397,7 +401,7 @@ For each vacancy, apply filters in this order:
 #### 5a. Universal filters (apply to ALL users)
 
 1. **Role match** — does the vacancy title match the user's target profession (`job_title` + `keywords` from profile)?
-2. **Freshness** — remove if older than profile limit (default 3 days)
+2. **Freshness** — remove if older than `max_vacancy_age_days` from the profile (default 30 days if not set)
 3. **Deduplication** — remove if same company + role already in history
 4. **Work permit check** — if the vacancy explicitly requires authorization to work in a country where the user does NOT have a permit → flag in report with label ⚠️ Требуется разрешение на работу. Show in separate section.
 5. **English level check** — if the vacancy explicitly requires C1, C2, or "native/fluent English" AND the user's English level is below that threshold → flag with label ⚠️ Требуется уровень [C1/native]. Show in separate section.
@@ -990,6 +994,7 @@ File `/areas/job-hunter-profile.md`:
 - `salary_floor`: minimum salary
 - `salary_currency`: currency for salary threshold
 - `show_no_salary`: whether to show vacancies without stated salary (yes/no)
+- `max_vacancy_age_days`: freshness of vacancies on platforms, days (default 30)
 - `telegram_vacancy_max_age_days`: freshness of Telegram vacancies and channels, days (default 30)
 - `experience_years`: total years of experience
 - `experience_level`: junior/mid/senior/lead
