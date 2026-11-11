@@ -306,7 +306,17 @@ For each platform in the saved list (priority order):
 
 **talent-move.ru specifics:** Open https://talent-move.ru/, search by user's profession keywords (from profile `keywords`) with remote filter. Extract vacancy links and titles.
 
-**Step 2b — Web search for new platforms (every run)**
+**Step 2b — Telegram channel discovery (every run, BEFORE the web search for platforms)**
+
+On EVERY daily run, before Step 2c, run **Phase 7 steps 1–4** (clarify role from the profile, discover, verify by posts, collect vacancies). The two tasks are similar and both repeat every time on purpose: a channel could be missed last time, new channels appear, and someone may have published a new list of recommended channels or platforms.
+
+- Take the role and field from the profile (`job_title`, `keywords`) — no questions on a daily run.
+- Besides the usual discovery sources, look for **recently published lists and recommendations** (articles, posts, forum and community threads, channel digests) of Telegram channels and job platforms for the user's field.
+- Collect only what fits the user's profile (field, role, work format, geography, language). Channels not seen before and verified by posts are **added to the profile's Telegram channel list automatically**; channels that failed verification are not added (note them in the report limits).
+- Vacancies from newly verified channels go into the normal pool and are filtered like everything else (Step 5).
+- In the report, new channels appear as rows of the section «Список новых платформ этого запуска» (platform type: Telegram-канал, link, vacancies found, added to profile: yes/no).
+
+**Step 2c — Web search for new platforms (every run)**
 
 On EVERY daily run, do a quick web search to discover job boards and aggregators not yet in the saved list. This supplements — never replaces — the known platforms.
 
@@ -719,7 +729,7 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 ## Phase 5: Source expansion
 
 **Two modes:**
-- **Quick scan (every daily run):** runs as Step 2b inside Phase 3 — a lightweight web search for new platforms, described there.
+- **Quick scan (every daily run):** runs as Steps 2b (Telegram channels) and 2c (web search for new platforms) inside Phase 3, described there.
 - **Deep scan (weekly or on request):** full procedure below. Runs automatically once a week, or when user says "find new channels / platforms".
 
 ### Deep scan procedure
@@ -1043,6 +1053,6 @@ File `/areas/job-hunter-profile.md`:
 
 **English level — flag, never auto-reject.** Vacancies requiring C1/C2/native when user is below that → dedicated report section.
 
-**New platforms — every run.** Step 2b runs on every daily run, not just weekly.
+**New platforms and channels — every run.** Step 2b (Telegram discovery) runs first, then Step 2c (web search for platforms), on every daily run, not just weekly. New finds that fit the profile are collected into it.
 
 **Link verification is not optional.** CORS blocks `fetch()` for external sites — navigate in browser tab directly. hh.ru and Hirify: verify via `fetch(url, {method:'HEAD'})` from their domain. External career sites: open in browser tab.
