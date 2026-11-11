@@ -20,6 +20,7 @@ This file holds what applies to every run: the rules, the settings model, and th
 | to set up the search for the first time, or redo the setup | `modes/onboarding.md` (+ `references/platforms.md`) |
 | a daily search run («find me a job», «run today's search») | `modes/daily-search.md` (source ledger), `references/run-journal.md`, `references/filters.md`, then `modes/apply.md` and `modes/report.md` |
 | Telegram channels / vacancies | `modes/telegram.md` |
+| Threads search (a mandatory source, searched before hh.ru) | `modes/threads.md` |
 | applications, cover letters | `modes/apply.md` |
 | the report | `modes/report.md` |
 | grants, open calls, residencies, art fairs, galleries | `modes/creative.md` |
@@ -47,7 +48,7 @@ These rules apply regardless of the user's profile or onboarding status. They ar
 
 12. **Autonomous sending** — everything that can be sent without the user is sent without the user: applications on every platform with a confirmed login (with a cover letter wherever there is a field for it) and messages to HR contacts in Telegram. The skill never asks to confirm the list. It hands a vacancy to the user only for a test task, a step only a person can do, a blocked click, a platform without a confirmed login, or a borderline filter result (`modes/apply.md`, «Autonomous sending»).
 
-13. **All mandatory sources, every run** — every run checks every mandatory source (all platforms in the profile, all known Telegram channels, LinkedIn, plus the search for new platforms and channels on its cadence of `discovery_interval_days`, default 7): breadth sweep first, deep work after, round-robin between sources. One source with many results or unavailable never ends the run. Each source gets exactly one status — проверен / недоступен / не поддерживает нужный поиск / не проверен — with numbers or a concrete confirmed reason, written to the run journal as the run goes. «Время закончилось» and similar excuses without a quoted tool or error limit are forbidden; «проверен» is never written for a search that was not executed (`modes/daily-search.md`, «Mandatory sources and the source ledger»; `references/run-journal.md`).
+13. **All mandatory sources, every run** — every run checks every mandatory source (all platforms in the profile, Threads (searched first, `modes/threads.md`), all known Telegram channels, LinkedIn, plus the search for new platforms and channels on its cadence of `discovery_interval_days`, default 7): breadth sweep first, deep work after, round-robin between sources. One source with many results or unavailable never ends the run. Each source gets exactly one status — проверен / недоступен / не поддерживает нужный поиск / не проверен — with numbers or a concrete confirmed reason, written to the run journal as the run goes. «Время закончилось» and similar excuses without a quoted tool or error limit are forbidden; «проверен» is never written for a search that was not executed (`modes/daily-search.md`, «Mandatory sources and the source ledger»; `references/run-journal.md`).
 
 > **Titles:** use the user's own `job_title` from the profile everywhere. A title listed in `cover_letter_title_exclusions` is never used for the user in cover letters or reports, even when a vacancy carries it (it may still be searched via `keywords`).
 
@@ -74,6 +75,7 @@ Personal settings are NOT universal defaults. They are configured by each user d
 - **Full-discovery interval** — how often to search for new Telegram channels and platforms (`discovery_interval_days`, default 7)
 - **Cover-letter title exclusions** — titles never used for the user in letters (`cover_letter_title_exclusions`)
 - **Resume link** — `resume_url`, sent to HR contacts in Telegram messages
+- **Threads search** — `threads_queries`, `threads_accounts`, `threads_last_checked_date`, `threads_first_run_days` (default 30), `threads_overlap_days` (default 3); soft filter: a post without a stated work format is kept (`modes/threads.md`)
 - **Telegram vacancy freshness** — how many days back vacancies in Telegram channels count (`telegram_vacancy_max_age_days`)
 - **Resume location**
 - **Platform list** — which platforms to search
@@ -142,6 +144,7 @@ The profile file (see «Where the profile lives»):
 - `salary_currency`: currency for salary threshold
 - `show_no_salary`: whether to show vacancies without stated salary (yes/no)
 - `max_vacancy_age_days`: freshness of vacancies on platforms, days (default 30)
+- `threads_queries`, `threads_accounts`, `threads_last_checked_date`, `threads_first_run_days` (30), `threads_overlap_days` (3): Threads search (`modes/threads.md`)
 - `telegram_vacancy_max_age_days`: freshness of Telegram vacancies and channels, days (default 30)
 - `experience_years`: total years of experience
 - `experience_level`: junior/mid/senior/lead
