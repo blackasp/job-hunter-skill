@@ -18,7 +18,7 @@ This file holds what applies to every run: the rules, the settings model, and th
 | The user wants… | Load |
 |---|---|
 | to set up the search for the first time, or redo the setup | `modes/onboarding.md` (+ `references/platforms.md`) |
-| a daily search run («find me a job», «run today's search») | `modes/daily-search.md` (source ledger), `references/run-journal.md`, `references/filters.md`, then `modes/apply.md` and `modes/report.md` |
+| a daily search run («find me a job», «run today's search») | **`modes/orchestrator.md` first** — it dispatches the 4-agent pipeline (Search → Filter → Apply → Report). Each agent loads only its own file. Do NOT load all mode files at once into one context. |
 | Telegram channels / vacancies | `modes/telegram.md` |
 | Threads search (a mandatory source, searched before hh.ru) | `modes/threads.md` |
 | applications, cover letters | `modes/apply.md` |
@@ -49,6 +49,12 @@ These rules apply regardless of the user's profile or onboarding status. They ar
 12. **Autonomous sending** — everything that can be sent without the user is sent without the user: applications on every platform with a confirmed login (with a cover letter wherever there is a field for it) and messages to HR contacts in Telegram. The skill never asks to confirm the list. It hands a vacancy to the user only for a test task, a step only a person can do, a blocked click, a platform without a confirmed login, or a borderline filter result (`modes/apply.md`, «Autonomous sending»).
 
 13. **All mandatory sources, every run** — every run checks every mandatory source (all platforms in the profile, Threads (searched first, `modes/threads.md`), all known Telegram channels, LinkedIn, plus the search for new platforms and channels on its cadence of `discovery_interval_days`, default 7): breadth sweep first, deep work after, round-robin between sources. One source with many results or unavailable never ends the run. Each source gets exactly one status — проверен / недоступен / не поддерживает нужный поиск / не проверен — with numbers or a concrete confirmed reason, written to the run journal as the run goes. «Время закончилось» and similar excuses without a quoted tool or error limit are forbidden; «проверен» is never written for a search that was not executed (`modes/daily-search.md`, «Mandatory sources and the source ledger»; `references/run-journal.md`).
+
+14. **Browser first, no workarounds** — the first action of every run is a browser availability check. Fetch failures (ERR_CONNECTION_RESET, 403, timeout) switch to the browser immediately; the only fallback order is WebFetch → Chrome extension → built-in browser → unavailable. curl and other shell downloads are never a fallback.
+
+15. **Resolve redirects before listing as manual** — open the response button, check for an existing response on the target platform, run full filters there, apply if possible; vacancies with an existing response are not listed; filtered ones go to the report with a reason.
+
+16. **Multi-agent pipeline for daily runs** — a daily search run MUST use the 4-agent pipeline defined in `modes/orchestrator.md`. Loading all mode files into one context is prohibited: it exceeds the model's reliable attention span and causes rules from early sections to be forgotten by the time later steps execute. Each agent loads ONLY its own mode file.
 
 > **Titles:** use the user's own `job_title` from the profile everywhere. A title listed in `cover_letter_title_exclusions` is never used for the user in cover letters or reports, even when a vacancy carries it (it may still be searched via `keywords`).
 

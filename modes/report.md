@@ -67,3 +67,21 @@
 **Invitations.** Show only invitations received within the last 2 months (cut-off: today minus 60 days), sorted by date, most recent first. For each: company, role, vacancy link, date received. Skip older invitations — they are stale. Invitations are shown inside the existing sections; no new section is added.
 
 **Run journal.** After the report is final, write the run's entry to the journal (see `references/run-journal.md`) and, if the profile structure changed outside the skill update, give the reminder from «Profile template» in `references/run-journal.md`. The journal is not part of the report and does not change its format.
+
+---
+
+## ⛔ Agent 4 (Report) — Exit checklist
+
+**Agent 4 may not declare the run complete until ALL of the following are true:**
+
+- [ ] The report is a Claude Doc created via `mcp__Claude_Docs__batch` with `container.create` — not a chat message, not an HTML artifact
+- [ ] All 7 required sections are present in this exact order: Авто-отклики, TG-сообщения, Требуют ручного отклика, Заблокированы/Plus, Новые платформы, Что сделать вручную, Список новых платформ
+- [ ] Every vacancy row in every section has a clickable link in format `[Название](https://url)` — no bare URLs
+- [ ] Every Telegram vacancy row has `tg_message_link` populated
+- [ ] hh.ru and Hirify links were verified via `fetch(url, {method:'HEAD'})` from their domain; external links were verified by navigation in browser tab
+- [ ] The summary section contains the per-source ledger list (one bullet per mandatory source, with status and numbers)
+- [ ] No section is omitted even if empty — an empty section gets «Нет вакансий» or «—»
+- [ ] No text block is a wall of text — all comments are in short paragraphs or lists (rule 10)
+- [ ] New platforms from this run were saved to `/areas/job-hunter-profile.md`
+- [ ] Run journal entry was written
+- [ ] The Claude Doc link was provided to the user in the chat reply

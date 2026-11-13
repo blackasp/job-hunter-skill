@@ -195,3 +195,20 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 **Key rule:** Never limit discovery to a fixed predefined list. The internet always has niche platforms, new aggregators, and profession-specific boards that don't appear in any hardcoded list. Discover them fresh every week.
 
 ---
+
+## ⛔ Agent 1 (Search) — Exit checklist
+
+**Agent 1 may not hand off `raw_vacancies[]` until ALL of the following are true:**
+
+- [ ] Every mandatory source has a ledger row with a final status (проверен / недоступен / не поддерживает / не проверен)
+- [ ] No source is marked «проверен» unless a search query was actually executed on it
+- [ ] Threads was searched FIRST, before any job platform
+- [ ] Phase A breadth sweep is complete across ALL sources before any Phase B depth work began
+- [ ] Every `raw_vacancies[]` item has all required fields: `id`, `platform`, `title`, `company`, `url`, `posted_date`, `work_format`, `tg_message_link` (if TG)
+- [ ] Telegram vacancies: every item has `tg_message_link` populated — items without it are dropped from the array
+- [ ] Browser fallback was used for any source that returned ERR_CONNECTION_RESET, 403, or timeout on WebFetch
+- [ ] `raw_vacancies[]` has been written to in-session storage before returning to Orchestrator
+
+If any check fails → fix it before handing off. If a source is genuinely unreachable after all fallbacks, mark it «недоступен» with evidence and continue.
+
+---
