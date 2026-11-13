@@ -107,3 +107,20 @@ After filtering — rank by relevance:
 ## Already reviewed by the user
 
 Skip silently any vacancy listed in the profile's `manual_reviewed` (the user already handled it by hand and asked not to see it again): do not include it in «Требуют ручного отклика» or anywhere else, and do not count it as new.
+
+---
+
+## ⛔ Agent 2 (Filter) — Exit checklist
+
+**Agent 2 may not return `filtered_vacancies[]` until ALL of the following are true:**
+
+- [ ] `filterFull()` was applied to EVERY item in `raw_vacancies[]` — no item was skipped or sampled
+- [ ] 1С check used `requirementsBlock()` — only the requirements/duties blocks were checked for tech blockers, not the whole description (Bug 1 fix)
+- [ ] RU-only geo exclusion was applied using the full expanded regex — not just the word «Россия» or «Россия / Удалённо» (Bug 2 fix)
+- [ ] Every item has `filter_passed`, `blocked`, `needs_manual` flags set
+- [ ] Every blocked item has `blocked_reason` populated (which rule triggered it)
+- [ ] Every `needs_manual` item has `manual_reason` populated
+- [ ] Deduplication was checked against the full application history, not just the current run
+- [ ] `filtered_vacancies[]` has been written to in-session storage before returning to Orchestrator
+
+Filter results summary (counts of passed / blocked / needs_manual) must be logged to the in-session context so the Orchestrator can include them in the report.

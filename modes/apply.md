@@ -177,3 +177,22 @@ Example: *"Буду рада рассказать подробнее на вст
 - ❌ Never use a title listed in the profile's `cover_letter_title_exclusions` (for example, a title the user does not identify with, even if the vacancy itself carries it)
 
 **Before writing:** extract from the vacancy — company name, hiring manager name (if any), product/service, top 2–3 required skills. Cross-reference with resume. Write all 5 parts in order, in 4–5 sentences. The letter is written in the language of the vacancy. Every claim must be verifiable against the resume.
+
+---
+
+## ⛔ Agent 3 (Apply) — Exit checklist
+
+**Agent 3 may not return `apply_results[]` until ALL of the following are true:**
+
+- [ ] Salary check was performed for EVERY vacancy before submitting the application (Bug 2 fix: salary check is mandatory, not optional)
+- [ ] Every applied vacancy was pushed to `window.__confirmedApplied` as a full object, not just the ID (Bug 3 fix)
+- [ ] Every vacancy was checked for a test assignment in the description before applying — if found, it goes to «manual» list, not auto-applied (Bug 4 fix)
+- [ ] Pacing rules were respected throughout: 5–12 s between applications, 45–90 s pause after every 5 applications, 5–8 min pause after every 20 applications
+- [ ] No salary was mentioned in any cover letter
+- [ ] Every cover letter has exactly 5 parts and 4–5 sentences total
+- [ ] No title from `cover_letter_title_exclusions` was used in any cover letter or message
+- [ ] Cross-platform apply was checked: vacancies pointing to a logged-in platform were applied there, not moved to manual
+- [ ] Every `apply_results[]` item has: `vacancy_id`, `action`, `cover_letter_sent`, `applied_at`
+- [ ] `apply_results[]` has been written to in-session storage before returning to Orchestrator
+
+If a captcha, `blocked: true`, or HTTP 429 was encountered → the loop was stopped immediately and the event is recorded in `apply_results[]`.
