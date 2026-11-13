@@ -63,7 +63,7 @@ Works for any profession, any country, any language.
 
 1. Open **claude.ai → Settings → Skills**
 2. Click **Add skill**
-3. Upload the skill **as a folder** (or a zip) containing `job-hunter-skill.md` as the entry file together with the `modes/` and `references/` folders. The entry file loads the modes it needs; if only the entry file is installed, it reads the rest from this repository.
+3. Make a folder `job-hunter`, copy `job-hunter-skill.md` into it and **rename it to `SKILL.md`** (the installer requires exactly this name, otherwise it fails with «Zip must contain a SKILL.md file»), and copy the `modes/` and `references/` folders next to it. Zip the `job-hunter` folder (the zip must contain `SKILL.md` directly inside that folder) and upload the zip. The entry file loads the modes it needs; if only `SKILL.md` is installed, it reads the rest from this repository.
 4. Save
 
 ### Structure
@@ -284,7 +284,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full history of changes.
 
 1. Открой **claude.ai → Settings → Skills**
 2. Нажми **Add skill**
-3. Загрузи скилл **папкой** (или zip): входной файл `job-hunter-skill.md` вместе с папками `modes/` и `references/`. Входной файл подгружает нужные режимы; если установлен только он, остальное читается из этого репозитория.
+3. Создай папку `job-hunter`, скопируй в неё `job-hunter-skill.md` и **переименуй в `SKILL.md`** (установщик требует именно такое имя, иначе будет ошибка «Zip must contain a SKILL.md file»), рядом положи папки `modes/` и `references/`. Заархивируй папку `job-hunter` (внутри неё сразу должен лежать `SKILL.md`) и загрузи zip. Входной файл подгружает нужные режимы; если установлен только `SKILL.md`, остальное читается из этого репозитория.
 4. Сохрани
 
 ### Структура
