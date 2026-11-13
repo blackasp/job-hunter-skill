@@ -44,6 +44,8 @@ The one-line summary of the report (`modes/report.md`) names the status of every
 
 ### Step 0: Open the run journal
 
+**Step 0, first action — browser availability check (before the journal).** Almost every platform needs the user's saved sign-ins, which exist only in the user's own Chrome (Claude in Chrome extension) or built-in browser. A scheduled task starts a **new cloud session** that does not inherit the desktop link of an interactive session, so it has no browser unless the task was created with «Require this computer». Therefore, before opening the journal: check that the `mcp__claude-in-chrome__*` (or built-in browser) tools are present and answer (`tabs_context_mcp`). If they are not available, say so at the very start of the report and in the first message: «браузер пользователя недоступен — нет сессий и cookie, большинство платформ будет не проверено; для запланированной задачи включите «Require this computer»». Then continue with what works without sign-in (public pages via WebFetch/WebSearch) and mark every platform that needs a login «не проверен — нет браузера» in the ledger. Do not pretend a platform was checked.
+
 Before anything else open the run journal (see `references/run-journal.md`). **If `run_journal_url` is missing or the document does not exist, create it now (not at the end) and save its link to the profile.** Note the start time, read `last_run_date` and `last_full_discovery_date`, and decide the discovery type for this run (Step 2b). Create the source ledger (see above) and write it to the journal with all rows «не начат». Record the start and end time of every step using real clock readings and update each ledger row right after its source is processed. If the journal cannot be written, keep the entries in the session, state the actual error, and show the statuses in the report summary line.
 
 ### Step 0a: Salary threshold for this run
@@ -82,9 +84,9 @@ For each platform in the saved list (priority order), one after another, without
 
 **If browser hits a login page** — do NOT abort the run. Mark platform as "needs re-auth", continue with others, note in report.
 
-**Proxy blocking (ERR_CONNECTION_RESET, 403, timeout):** some platforms are often unreachable from Anthropic's cloud proxy (for Russian-language boards this is common). When a cloud fetch or WebFetch fails for them:
+**Fallback triggers (ERR_CONNECTION_RESET, 403, timeout, robots_disallowed, connect_rejected):** some platforms are often unreachable from Anthropic's cloud proxy (for Russian-language boards this is common), and some refuse the cloud fetcher by `robots.txt`. Each of these results is an **immediate trigger** to switch to the browser, not a reason to retry the same WebFetch. The only allowed order is: **WebFetch → Chrome extension → built-in browser → mark unavailable.** `curl`, `wget`, Python requests or any other shell download is **not a step** of this chain and is never used to get around a refusal.
 1. Switch to the Chrome browser extension (`mcp__claude-in-chrome__navigate`) — it goes through the user's own network, not Anthropic's proxy.
-2. If Chrome also fails — mark the platform «⚠️ недоступна из браузера» in the report and add it to «Что сделать вручную».
+2. If Chrome also fails — try the built-in browser if present; if that fails too — mark the platform «⚠️ недоступна из браузера» in the report and add it to «Что сделать вручную».
 3. Never mark a known platform as «новая» just because it was unreachable — it stays in the known list.
 
 **Step 2b — Telegram channels (every run, BEFORE the web search for platforms)**
