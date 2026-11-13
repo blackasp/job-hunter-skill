@@ -11,6 +11,15 @@ All notable changes to Job Hunter skill are documented here.
 
 ---
 
+## [1.3.2] — 2026-11-13
+
+### Fixed
+- `robots_disallowed` and `connect_rejected` are now immediate triggers to switch from WebFetch to the browser (previously only ERR_CONNECTION_RESET, 403 and timeout were listed, so the run kept retrying WebFetch).
+- `curl` and other shell downloads are explicitly not a fallback step; the order is WebFetch → Chrome extension → built-in browser → unavailable.
+- New first action of Step 0: check that the user's browser is available before opening the journal. A scheduled task runs in a new cloud session without the desktop link, so without «Require this computer» there are no sign-ins; the run says so at the top of the report and marks login-only platforms «не проверен — нет браузера».
+
+---
+
 ## [1.3.1] — 2026-11-11
 
 ### Added
