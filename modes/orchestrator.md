@@ -13,7 +13,7 @@ The monolithic run loaded 5–7 files (~40 k tokens) into one context. Rules wri
 ## Pipeline overview
 
 ```
-Orchestrator (this file + job-hunter-skill.md universal rules)
+Orchestrator (this file + SKILL.md universal rules)
     │
     ├─► Agent 1 — SEARCH   (loads: modes/daily-search.md + modes/threads.md + modes/telegram.md)
     │       Output → raw_vacancies[]
@@ -176,7 +176,7 @@ If any check fails → note the failure in the report and do not mark the run as
 
 ## Rules that apply at orchestration level
 
-These rules come from `job-hunter-skill.md` and must be enforced by the Orchestrator, not delegated to individual agents:
+These rules come from `SKILL.md` and must be enforced by the Orchestrator, not delegated to individual agents:
 
 1. All mandatory sources must be attempted — Agent 1 may not skip a source silently.
 2. No salary mentioned in cover letters — Agent 3 must comply.

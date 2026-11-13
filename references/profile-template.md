@@ -1,6 +1,6 @@
 # Profile template (neutral — no personal values)
 
-Fields the skill reads from the user's personal profile. The working copy lives in the user's own memory (see «Where the profile lives» in `job-hunter-skill.md`), not in this repository. Empty or missing fields mean «no filter».
+Fields the skill reads from the user's personal profile. The working copy lives in the user's own memory (see «Where the profile lives» in `SKILL.md`), not in this repository. Empty or missing fields mean «no filter».
 
 ```yaml
 language:                          # chosen in onboarding

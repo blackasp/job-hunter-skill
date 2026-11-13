@@ -63,13 +63,13 @@ Works for any profession, any country, any language.
 
 1. Open **claude.ai → Settings → Skills**
 2. Click **Add skill**
-3. Upload the skill **as a folder** (or a zip) containing `job-hunter-skill.md` as the entry file together with the `modes/` and `references/` folders. The entry file loads the modes it needs; if only the entry file is installed, it reads the rest from this repository.
+3. Upload the repository folder (or a zip of it). The entry file is `SKILL.md` and it must stay in the root of the folder, together with the `modes/` and `references/` folders. If you download the repository as a ZIP from GitHub, upload that ZIP: the installer requires a file named exactly `SKILL.md` at the root (or inside a single top-level folder). The entry file loads the modes it needs; if only `SKILL.md` is installed, it reads the rest from this repository.
 4. Save
 
 ### Structure
 
 ```
-job-hunter-skill.md        entry file: rules, settings model, map of modes
+SKILL.md                  entry file: rules, settings model, map of modes
 modes/                     onboarding, daily-search, telegram, apply, report, creative
 references/                platforms, filters, run-journal, profile-template
 ```
@@ -284,13 +284,13 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full history of changes.
 
 1. Открой **claude.ai → Settings → Skills**
 2. Нажми **Add skill**
-3. Загрузи скилл **папкой** (или zip): входной файл `job-hunter-skill.md` вместе с папками `modes/` и `references/`. Входной файл подгружает нужные режимы; если установлен только он, остальное читается из этого репозитория.
+3. Загрузи папку репозитория (или её zip). Входной файл называется `SKILL.md` и должен лежать в корне папки вместе с папками `modes/` и `references/`. Если скачала репозиторий как ZIP с GitHub, загружай этот ZIP: установщику нужен файл ровно с именем `SKILL.md` в корне (или внутри одной верхней папки). Входной файл подгружает нужные режимы; если установлен только `SKILL.md`, остальное читается из этого репозитория.
 4. Сохрани
 
 ### Структура
 
 ```
-job-hunter-skill.md        входной файл: правила, модель настроек, карта режимов
+SKILL.md                  входной файл: правила, модель настроек, карта режимов
 modes/                     онбординг, ежедневный поиск, telegram, отклики, отчёт, творчество
 references/                площадки, фильтры, журнал запусков, шаблон профиля
 ```
