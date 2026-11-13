@@ -4,6 +4,13 @@ All notable changes to Job Hunter skill are documented here.
 
 ---
 
+## [1.3.3] — 2026-11-14
+
+### Changed
+- The entry file `job-hunter-skill.md` is renamed to `SKILL.md`: the skill installer requires this exact name («Zip must contain a SKILL.md file»), so the repository can now be zipped and uploaded as is. References in `modes/orchestrator.md`, `references/profile-template.md` and the README installation sections are updated.
+
+---
+
 ## [1.3.1] — 2026-11-11
 
 ### Added
