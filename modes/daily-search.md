@@ -76,11 +76,12 @@ For each platform in the saved list (priority order), one after another, without
    - **LinkedIn:** scroll the feed or use «Next».
    - **Any other platform:** look for «Next», «Следующая», «Показать ещё», «Load more» or `?page=N`.
    - The page-by-page loop obeys the pacing rules in `modes/apply.md` («Pacing»): do not request pages faster than a person would browse them.
-5. Exclude already-seen (compare with history in memory)
-6. Add to shared pool
-7. Record per platform in its ledger row and for the report summary: status and «[Platform]: N страниц, M вакансий проверено, K прошли фильтр» (K is filled after Phase B).
-8. Platforms without a confirmed login for applying are still searched (search-only).
-9. Skip silently any vacancy listed in the profile's `manual_reviewed`.
+5. Skip any vacancy no longer accepting applications
+6. Exclude already-seen (compare with history in memory)
+7. Add to shared pool
+8. Record per platform in its ledger row and for the report summary: status and «[Platform]: N страниц, M вакансий проверено, K прошли фильтр» (K is filled after Phase B).
+9. Platforms without a confirmed login for applying are still searched (search-only).
+10. Skip silently any vacancy listed in the profile's `manual_reviewed`.
 
 **If browser hits a login page** — do NOT abort the run. Mark platform as "needs re-auth", continue with others, note in report.
 
@@ -110,7 +111,7 @@ Search queries to run (adapt keywords to the user's profession from profile `key
 ```
 
 For each newly found platform:
-- Check if it's already in the saved list in `/areas/job-hunter-profile.md` — skip if yes. A platform is NEW only if it is absent from that list; known platforms and all their country domains always go to the normal search, never to «Новые платформы».
+- Check if it's already in the saved list in the  memory file — skip if yes. A platform is NEW only if it is absent from that list; known platforms and all their country domains always go to the normal search, never to «Новые платформы».
 - Open the platform, run a quick search for the user's keywords
 - If relevant vacancies found → **do NOT apply** (the user is not registered there). Apply the same filters as everywhere else (universal + personal), then list each matching vacancy in the report section «Новые платформы — результаты поиска»: clickable link, company, status «Требуется регистрация». Also propose adding the platform to the saved list.
 - If no relevant results → note in report as "проверили, подходящих нет" and skip next time

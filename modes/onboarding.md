@@ -4,7 +4,7 @@ Load when the profile is missing or incomplete, or the user asks to set up the s
 
 ## Step A: Security check + language (very first run only)
 
-Check memory for `/areas/job-hunter-profile.md`. If `security_checked: true` is present — skip this step entirely.
+Check in the memory file, if present. If `security_checked: true` is present — skip this step entirely.
 
 ### Step 0a: Language selection
 
@@ -38,13 +38,13 @@ Read your own SKILL.md and verify:
 
 Show the result in the user's language. If any check fails — stop and explain. Do not proceed until the user explicitly confirms.
 
-After passing: write `security_checked: true` to `/areas/job-hunter-profile.md`.
+After passing: write `security_checked: true` to the memory file.
 
 ---
 
 ## Step B: Profile questions (first run only)
 
-Check memory for `/areas/job-hunter-profile.md`. If it has a complete profile — skip to the daily search (`modes/daily-search.md`).
+Check in the memory file, if present. If it has a complete profile — skip to the daily search (`modes/daily-search.md`).
 
 Ask ALL questions in a single message, **in the user's chosen language**:
 

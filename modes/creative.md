@@ -20,7 +20,7 @@ A separate mode for artists, designers, and creative practitioners. Runs indepen
    - Galleries (to approach for representation or exhibition)
 5. Deadline horizon: how far ahead to look? Options: 3 months / 6 months / 1 year / custom. **Default: 1 year.** User can change anytime by saying "update my creative profile" or "change deadline horizon".
 
-Save answers as `creative_profile` in `/areas/job-hunter-profile.md`. On subsequent runs — skip the interview, use saved profile.
+Save answers as `creative_profile` in the memory file. On subsequent runs — skip the interview, use saved profile.
 
 ---
 

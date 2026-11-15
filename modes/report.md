@@ -46,7 +46,7 @@
 ## Список новых платформ этого запуска
 Таблица: Платформа | URL | Найдено вакансий | Добавлена в профиль?
 (Перечислить ТОЛЬКО платформы, где в этом запуске найдена хотя бы одна подходящая вакансия.
-После создания отчёта — автоматически добавить эти платформы в список известных платформ в /areas/job-hunter-profile.md)
+Add these platforms to the known platforms list in the memory file automatically after the report creation)
 ```
 
 **Rules for the document:**
@@ -57,7 +57,7 @@
 4. **External career sites** — verify by navigating in browser (not `fetch()` — CORS will block). If unavailable, remove link.
 5. **Document title** — in the user's chosen language, with the date. Russian users: «Отчёт по поиску работы — 9 ноября 2026».
 6. **Link verification** — hh.ru and Hirify links: verify via fetch(url, {method:'HEAD'}) in browser console. External sites: navigate directly in a browser tab.
-7. **New platforms auto-save** — after the report is finalized, add every platform from «Список новых платформ этого запуска» to the known platforms list in `/areas/job-hunter-profile.md` automatically.
+7. **New platforms auto-save** — after the report is finalized, add every platform from «Список новых платформ этого запуска» to the known platforms list in the memory file automatically.
 8. **Format is immutable** — do NOT rearrange sections, rename columns, merge sections, or add/remove sections without explicit user instruction. The format above is the contract.
 9. **New platforms section holds only new platforms.** Results for platforms already in the profile go to «Авто-отклики» (what was sent), «Требуют ручного отклика» (what needs the user), «Заблокированы / Plus» (what was filtered out) and the per-source list in the summary. They never appear in «Новые платформы — результаты поиска» or «Список новых платформ этого запуска».
 10. **No walls of text.** Every comment, explanation or summary in the report (summary, the note under «TG-сообщения отправлены», the note under «Заблокированы / Plus», any other text) is written as short logical paragraphs or as a list: one item per platform, per reason or per step. Detail (numbers, reasons) stays; a single solid block of text is not allowed. The same applies to messages to the user outside the report.
@@ -82,6 +82,6 @@
 - [ ] The summary section contains the per-source ledger list (one bullet per mandatory source, with status and numbers)
 - [ ] No section is omitted even if empty — an empty section gets «Нет вакансий» or «—»
 - [ ] No text block is a wall of text — all comments are in short paragraphs or lists (rule 10)
-- [ ] New platforms from this run were saved to `/areas/job-hunter-profile.md`
+- [ ] New platforms from this run were saved to the memory file
 - [ ] Run journal entry was written
 - [ ] The Claude Doc link was provided to the user in the chat reply

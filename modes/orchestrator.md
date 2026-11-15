@@ -95,7 +95,7 @@ Items with `blocked: true` are NOT passed to Agent 3. Items with `needs_manual: 
 Если сессия оборвалась в середине прогона (потеря контекста, закрытие браузера, лимит токенов) — не начинать заново. Восстановить с места остановки:
 
 **Шаг R-1 — Прочитать профиль**
-Открыть `/areas/job-hunter-profile.md`, взять `last_run_date` и `last_report_url`.
+Open the memory file, get `last_run_date` and `last_report_url`.
 
 **Шаг R-2 — Определить, был ли прогон сегодня**
 - Если `last_run_date` = сегодняшняя дата → прогон уже начат. Перейти к шагу R-3.

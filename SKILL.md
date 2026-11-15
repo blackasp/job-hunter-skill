@@ -62,7 +62,9 @@ These rules apply regardless of the user's profile or onboarding status. They ar
 
 ---
 
-## ⚠️ PERSONAL SETTINGS (user-specific, stored in `/areas/job-hunter-profile.md`)
+## ⚠️ PERSONAL SETTINGS (user-specific, stored in the memory file)
+
+Memory file is `%CodexSpace%/job-hunter/user-profile.md`. Use this location wherever memory file is mentioned.
 
 Personal settings are NOT universal defaults. They are configured by each user during onboarding and can be updated at any time. The following settings are personal and must NEVER be applied to new users who haven't configured them:
 
@@ -105,7 +107,7 @@ Users can update their settings at any time by saying things like:
 
 When the user updates a setting — apply the change immediately to the profile in memory and confirm what changed. Use the setting in all subsequent searches.
 
-**Show settings command:** When the user asks to see their current settings, read `/areas/job-hunter-profile.md` and display the key settings in a clear summary:
+**Show settings command:** When the user asks to see their current settings, read memory file and display the key settings in a clear summary:
 ```
 Текущие настройки поиска:
 - Профессия: [job_title]
@@ -128,7 +130,7 @@ When the user updates a setting — apply the change immediately to the profile 
 
 ## Where the profile lives
 
-- **The working copy** of the personal profile is the user's own memory file. If the session is attached to a Project, the working copy is the Project's copy (`/projects/<project-id>/areas/job-hunter-profile.md`): write there, read from there first. The account-level `/areas/job-hunter-profile.md` may hold an older copy; do not rely on it when the Project copy exists.
+- **The working copy** of the personal profile is the user's own memory file. If the session is attached to a Project, the working copy is the Project's copy (`/projects/<project-id>/areas/job-hunter-profile.md`): write there, read from there first. The account-level memory file may hold an older copy; do not rely on it when the Project copy exists.
 - **The template** `references/profile-template.md` in this repository is neutral (no personal values). It lists every field the skill reads.
 - **Reminder (mandatory).** If, during a run or a settings change, the profile's *structure* changed in the user's memory (a field was added, renamed or removed) and `references/profile-template.md` in the repository does not have it, finish the run with this reminder: «Структура job-hunter-profile.md изменилась (поля: …) — нужно залить pull request с обновлением шаблона references/profile-template.md». Never put personal values (salary, blockers, links, IDs) into the repository: it is public. Only field names and neutral examples go into the template.
 - Personal settings are not shared between users by the skill itself. Each user's profile lives in that user's own account or project memory; the skill does not enforce separation between people who share one account.
