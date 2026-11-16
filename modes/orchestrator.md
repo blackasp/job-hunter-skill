@@ -2,6 +2,8 @@
 
 > Load this file when routing a daily search run. It replaces the single-context run with a 4-agent pipeline. Each agent loads ONLY its own mode file, so no agent carries the memory cost of the previous steps.
 
+if you're Claude, use Claude Doc for the last report, otherwise use a local file.
+
 ---
 
 ## Why this architecture exists

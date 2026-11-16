@@ -93,7 +93,7 @@ Requires venues with technical capacity (high ceilings, blackout, AV infrastruct
 
 ### 6e: Report format for creative opportunities
 
-Create a separate Claude Docs document (never mix with job search report):
+If you're Claude, create a separate Claude Docs document, otherwise create a file `creative_opportunities.md ` (never mix with job search report):
 
 ```
 # 🎨 Творческие возможности — [дата]

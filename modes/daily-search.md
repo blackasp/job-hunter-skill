@@ -17,7 +17,7 @@ In the run of 2026-11-11 only hh.ru was searched. The previous instructions said
 | Status | Meaning | Required in the row |
 |---|---|---|
 | проверен | the search was actually executed for the profile keywords | pages / posts read, vacancies seen, vacancies that passed filters |
-| недоступен | the source could not be opened or searched | concrete evidence: URL, HTTP status or browser error text, time, and what was tried (cloud fetch → Chrome extension → built-in browser) |
+| недоступен | the source could not be opened or searched | concrete evidence: URL, HTTP status or browser error text, time, and what was tried (cloud fetch → Chrome extension (if Claude) → built-in browser) |
 | не поддерживает нужный поиск | opened, but no way to search by role / remote / date | what exactly is missing on the page |
 | не проверен | the search was not executed | the concrete reason (see «Confirmed reasons») and what is needed to continue |
 
@@ -41,6 +41,8 @@ The one-line summary of the report (`modes/report.md`) names the status of every
 **Before starting:** check `last_run_date` in profile. If it equals today's date — ask the user: "Поиск уже был запущен сегодня. Запустить снова?" Do not re-run automatically.
 
 **Also check for cold start:** if `last_run_date` is more than 14 days ago — notify the user: "Последний запуск был [дата]. Некоторые платформы могут требовать повторной авторизации." Then: verify auth on each platform (mark any that need re-login), run a full discovery (Step 2b) before searching.
+
+For all the tasks below if you're not Claude use built-in browser, rather than the external browser or Chrome extension. Work locally then, no AI cloud capabilities.
 
 ### Step 0: Open the run journal
 
@@ -85,9 +87,9 @@ For each platform in the saved list (priority order), one after another, without
 
 **If browser hits a login page** — do NOT abort the run. Mark platform as "needs re-auth", continue with others, note in report.
 
-**Fallback triggers (ERR_CONNECTION_RESET, 403, timeout, robots_disallowed, connect_rejected):** some platforms are often unreachable from Anthropic's cloud proxy (for Russian-language boards this is common), and some refuse the cloud fetcher by `robots.txt`. Each of these results is an **immediate trigger** to switch to the browser, not a reason to retry the same WebFetch. The only allowed order is: **WebFetch → Chrome extension → built-in browser → mark unavailable.** `curl`, `wget`, Python requests or any other shell download is **not a step** of this chain and is never used to get around a refusal.
-1. Switch to the Chrome browser extension (`mcp__claude-in-chrome__navigate`) — it goes through the user's own network, not Anthropic's proxy.
-2. If Chrome also fails — try the built-in browser if present; if that fails too — mark the platform «⚠️ недоступна из браузера» in the report and add it to «Что сделать вручную».
+**Fallback triggers (ERR_CONNECTION_RESET, 403, timeout, robots_disallowed, connect_rejected):** some platforms are often unreachable from Anthropic's cloud proxy (for Russian-language boards this is common), and some refuse the cloud fetcher by `robots.txt`. Each of these results is an **immediate trigger** to switch to the browser, not a reason to retry the same WebFetch. The only allowed order is: **WebFetch → Chrome extension (if Claude) → built-in browser → mark unavailable.** `curl`, `wget`, Python requests or any other shell download is **not a step** of this chain and is never used to get around a refusal.
+1. If Claude, switch to the Chrome browser extension (`mcp__claude-in-chrome__navigate`) — it goes through the user's own network, not Anthropic's proxy.
+2. If all above fails, try the built-in browser if present; if that fails too — mark the platform «⚠️ недоступна из браузера» in the report and add it to «Что сделать вручную».
 3. Never mark a known platform as «новая» just because it was unreachable — it stays in the known list.
 
 **Step 2b — Telegram channels (every run, BEFORE the web search for platforms)**

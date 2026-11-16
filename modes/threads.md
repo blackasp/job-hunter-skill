@@ -42,7 +42,7 @@ Threads posts are short and often do not name the work format. So the filter is 
 
 ## How to search (checked in practice)
 
-1. Open `https://www.threads.com/search?q=<query>&serp_type=default&filter=recent` in the browser (Claude in Chrome with the user's login). Run **every** query of `threads_queries`: different phrases return different posts («вакансия системный аналитик» finds vacancy posts that «системный аналитик» ranks low).
+1. Open `https://www.threads.com/search?q=<query>&serp_type=default&filter=recent` in the browser (Claude in Chrome or built-in browser with the user's login). Run **every** query of `threads_queries`: different phrases return different posts («вакансия системный аналитик» finds vacancy posts that «системный аналитик» ranks low).
 2. Collect posts while scrolling, in a background loop, and poll the result (a long loop inside one JavaScript call hits the tool timeout):
    - links: `a[href*="/post/"]` → `/@<account>/post/<id>`; date: `time[datetime]` (UTC); text: the post container's `innerText`;
    - the search results mix posts and replies; the order is **not strictly chronological**, so do not stop at the first old post: stop when the last 20 new posts are all older than the window (or after a reasonable scroll limit with the reason noted).

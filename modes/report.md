@@ -74,7 +74,7 @@ Add these platforms to the known platforms list in the memory file automatically
 
 **Agent 4 may not declare the run complete until ALL of the following are true:**
 
-- [ ] The report is a Claude Doc created via `mcp__Claude_Docs__batch` with `container.create` — not a chat message, not an HTML artifact
+- [ ] If you're Claude, the report is a Claude Doc created via `mcp__Claude_Docs__batch` with `container.create` — not a chat message, not an HTML artifact. Otherwise it's a local file
 - [ ] All 7 required sections are present in this exact order: Авто-отклики, TG-сообщения, Требуют ручного отклика, Заблокированы/Plus, Новые платформы, Что сделать вручную, Список новых платформ
 - [ ] Every vacancy row in every section has a clickable link in format `[Название](https://url)` — no bare URLs
 - [ ] Every Telegram vacancy row has `tg_message_link` populated
@@ -84,4 +84,4 @@ Add these platforms to the known platforms list in the memory file automatically
 - [ ] No text block is a wall of text — all comments are in short paragraphs or lists (rule 10)
 - [ ] New platforms from this run were saved to the memory file
 - [ ] Run journal entry was written
-- [ ] The Claude Doc link was provided to the user in the chat reply
+- [ ] The Claude Doc link (or the file report name) was provided to the user in the chat reply

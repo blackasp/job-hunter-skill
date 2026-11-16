@@ -4,7 +4,8 @@ The journal answers three questions: *when was the last run, when was the last f
 
 ## Where it is kept
 
-- **One living Claude Docs document** «Журнал запусков Job Hunter» (one table, one row per run, newest at the bottom). Its link is stored in the profile as `run_journal_url`. If the document does not exist yet, create it at the first run and save the link.
+- If you're Claude, use a **living Claude Docs document**, otherwise create a file `run_journal.md`.
+- «Job Hunter Run Journal» (one table, one row per run, newest at the bottom). Its link is stored in the profile as `run_journal_url`. If the document does not exist yet, create it at the first run and save the link.
 - The profile also holds two plain dates for quick decisions: `last_run_date` and `last_full_discovery_date`.
 - The journal is **not** part of the locked report and does not change its format. Never put personal values into the repository.
 - If the document cannot be written, keep the row in the session and show it in the report's summary line; tell the user once.
