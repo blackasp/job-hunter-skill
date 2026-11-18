@@ -15,18 +15,23 @@ The monolithic run loaded 5–7 files (~40 k tokens) into one context. Rules wri
 ```
 Orchestrator (this file + SKILL.md universal rules)
     │
-    ├─► Agent 1 — SEARCH   (loads: modes/daily-search.md + modes/threads.md + modes/telegram.md)
+    ├─► Agent 1 — SEARCH      (loads: modes/daily-search.md + modes/threads.md + modes/telegram.md)
     │       Output → raw_vacancies[]
     │
-    ├─► Agent 2 — FILTER   (loads: references/filters.md)
-    │       Input  ← raw_vacancies[]
+    ├─► Agent 1.5 — DEDUP     (loads: references/dedup.md)
+    │       Input  ← raw_vacancies[] + application history
+    │       Output → deduped_vacancies[]  (merged, with seen_in[], dedup_confidence, seen_before)
+    │       Note: runs INSIDE Agent 2 before filterFull(); not a separate spawned agent
+    │
+    ├─► Agent 2 — FILTER      (loads: references/filters.md)
+    │       Input  ← deduped_vacancies[]
     │       Output → filtered_vacancies[]
     │
-    ├─► Agent 3 — APPLY    (loads: modes/apply.md)
+    ├─► Agent 3 — APPLY       (loads: modes/apply.md)
     │       Input  ← filtered_vacancies[]
     │       Output → apply_results[]
     │
-    └─► Agent 4 — REPORT   (loads: modes/report.md)
+    └─► Agent 4 — REPORT      (loads: modes/report.md)
             Input  ← filtered_vacancies[] + apply_results[]
             Output → Claude Doc (run report)
 ```
@@ -59,9 +64,35 @@ Each item must have:
 }
 ```
 
+### Agent 1 → Agent 2 (after deduplication): `deduped_vacancies[]`
+
+Agent 2 runs `dedupVacancies(raw_vacancies, history)` from `references/dedup.md` before filtering. The result adds these fields to each item (deduplication metadata — additive only, never overwrites original fields):
+
+```json
+{
+  "seen_in": [
+    {
+      "platform": "hh.ru",
+      "url": "https://hh.ru/vacancy/123",
+      "id": "hh_123",
+      "posted_date": "2026-11-18T10:00:00Z",
+      "source_channel": null,
+      "tg_message_link": null
+    }
+  ],
+  "dedup_confidence": "confident | probable | null",
+  "dedup_flag": "probable | null",
+  "dedup_signals": ["exact-company-title", "location-match"],
+  "seen_before": false,
+  "seen_before_id": null
+}
+```
+
+`seen_in[]` has 1 entry for unique vacancies and 2+ entries for merged duplicates. `dedup_flag: 'probable'` means the merge confidence was not certain — flag in report with ⚠️. `seen_before: true` means the vacancy appeared in a previous run — label 👁 in report, never suppress.
+
 ### Agent 2 → Agent 3: `filtered_vacancies[]`
 
-Same shape as `raw_vacancies[]`, plus:
+Same shape as `deduped_vacancies[]`, plus:
 ```json
 {
   "filter_passed": true,

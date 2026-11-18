@@ -24,7 +24,7 @@ For each vacancy, apply filters in this order:
 
 1. **Role match** — does the vacancy title match the user's target profession (`job_title` + `keywords` from profile)?
 2. **Freshness** — remove if older than `max_vacancy_age_days` from the profile (default 30 days if not set)
-3. **Deduplication** — remove if same company + role already in history
+3. **Deduplication** — run `dedupVacancies(raw_vacancies, history)` from `references/dedup.md` BEFORE `filterFull()`. Confident duplicates are merged (kept as one entry with `seen_in[]`); probable duplicates are merged and flagged with `dedup_flag: 'probable'`; already-seen vacancies (`seen_before: true`) are kept and labelled 👁 in the report. See `references/dedup.md` for the full algorithm, confidence thresholds, and the Agent 1.5 exit checklist.
 4. **Work permit check** — if the vacancy explicitly requires authorization to work in a country where the user does NOT have a permit → flag in report with label ⚠️ Требуется разрешение на работу. Show in separate section.
 5. **English level check** — if the vacancy explicitly requires C1, C2, or "native/fluent English" AND the user's English level is below that threshold → flag with label ⚠️ Требуется уровень [C1/native]. Show in separate section.
 
@@ -170,6 +170,7 @@ Skip silently any vacancy listed in the profile's `manual_reviewed` (the user al
 - [ ] Every item has `filter_passed`, `blocked`, `needs_manual` flags set
 - [ ] Every blocked item has `blocked_reason` populated (which rule triggered it)
 - [ ] Every `needs_manual` item has `manual_reason` populated
+- [ ] `dedupVacancies()` was called on the full `raw_vacancies[]` BEFORE `filterFull()` — see `references/dedup.md` and its Agent 1.5 exit checklist
 - [ ] Deduplication was checked against the full application history, not just the current run
 - [ ] `filtered_vacancies[]` has been written to in-session storage before returning to Orchestrator
 
