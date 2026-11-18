@@ -835,14 +835,152 @@ runDedup('T-59', 'dedup-no-data-loss', () => {
   return { ok: true };
 }, 'T-59: 3 разные вакансии — все сохраняются после дедупликации, у каждой есть seen_in');
 
+// ════════════════════════════════════════════════════════════════════════════
+// FRESHNESS TESTS (T-60–T-67) — Stage 4
+// ════════════════════════════════════════════════════════════════════════════
+
+// checkFreshness implementation (copied from references/freshness.md)
+window.checkFreshness = (vacancy, profile) => {
+  const maxAge = (profile && profile.max_vacancy_age_days) || 30;
+  const daysBetween = (a, b) => {
+    const msA = (a instanceof Date) ? a.getTime() : new Date(a).getTime();
+    const msB = (b instanceof Date) ? b.getTime() : new Date(b).getTime();
+    if (isNaN(msA) || isNaN(msB)) return null;
+    return Math.floor(Math.abs(msB - msA) / 86400000);
+  };
+  const now = new Date();
+  if (vacancy.closed === true || vacancy.status === 'closed') {
+    return { freshness: 'закрыта', reason: 'vacancy marked closed by employer' };
+  }
+  if (vacancy.page_available === false) {
+    return { freshness: 'вероятно устарела', reason: 'page unavailable (closure unconfirmed)' };
+  }
+  const refDate = vacancy.published_at || vacancy.updated_at || vacancy.verified_at || null;
+  if (!refDate) {
+    return { freshness: 'неизвестно', reason: 'no date available (published_at, updated_at and verified_at all absent)' };
+  }
+  const age = daysBetween(refDate, now);
+  if (age === null) {
+    return { freshness: 'неизвестно', reason: 'date present but unparseable: ' + String(refDate) };
+  }
+  if (age <= maxAge) {
+    const src = vacancy.published_at ? 'published_at' : vacancy.updated_at ? 'updated_at' : 'verified_at';
+    return { freshness: 'актуальна', reason: `${age} days old (threshold ${maxAge}, source: ${src})` };
+  }
+  return { freshness: 'вероятно устарела', reason: `${age} days old (threshold ${maxAge}, source: ${vacancy.published_at ? 'published_at' : vacancy.updated_at ? 'updated_at' : 'verified_at'})` };
+};
+
+// Helper: build a date string N days ago from today
+const daysAgo = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+};
+
+const freshnessTests = [];
+let fPassed = 0, fFailed = 0;
+
+const runFreshness = (id, scenario, fn, notes) => {
+  let ok, detail;
+  try {
+    const r = fn();
+    ok = r.ok;
+    detail = r.detail || '';
+  } catch (e) {
+    ok = false;
+    detail = 'threw: ' + e.message;
+  }
+  freshnessTests.push({ id, scenario, ok, notes, detail });
+};
+
+// T-60: Fresh vacancy — published 5 days ago, threshold 45 → актуальна
+runFreshness('T-60', 'freshness-fresh', () => {
+  const vac = { published_at: daysAgo(5) };
+  const r = window.checkFreshness(vac, PROFILE);
+  if (r.freshness !== 'актуальна') return { ok: false, detail: 'expected актуальна, got ' + r.freshness };
+  return { ok: true };
+}, 'T-60: свежая вакансия (5 дн.) → актуальна');
+
+// T-61: Old vacancy — published 60 days ago, threshold 45 → вероятно устарела
+runFreshness('T-61', 'freshness-old', () => {
+  const vac = { published_at: daysAgo(60) };
+  const r = window.checkFreshness(vac, PROFILE);
+  if (r.freshness !== 'вероятно устарела') return { ok: false, detail: 'expected вероятно устарела, got ' + r.freshness };
+  return { ok: true };
+}, 'T-61: старая вакансия (60 дн.) → вероятно устарела');
+
+// T-62: Unknown date — no published_at, updated_at, verified_at → неизвестно
+runFreshness('T-62', 'freshness-unknown-date', () => {
+  const vac = { discovered_at: daysAgo(3) }; // only discovered_at — must NOT be used as published_at
+  const r = window.checkFreshness(vac, PROFILE);
+  if (r.freshness !== 'неизвестно') return { ok: false, detail: 'expected неизвестно, got ' + r.freshness + ' — discovered_at must NOT substitute published_at' };
+  return { ok: true };
+}, 'T-62: нет дат (только discovered_at) → неизвестно; discovered_at не подменяет published_at');
+
+// T-63: discovered_at later than published_at — published is still authoritative; vacancy is old
+runFreshness('T-63', 'freshness-rediscovery', () => {
+  const vac = {
+    published_at: daysAgo(60),   // old
+    discovered_at: daysAgo(2),   // re-discovered recently — must NOT make it fresh
+  };
+  const r = window.checkFreshness(vac, PROFILE);
+  if (r.freshness !== 'вероятно устарела') return { ok: false, detail: 'expected вероятно устарела (published_at is authoritative), got ' + r.freshness };
+  // Verify the reason mentions published_at as source
+  if (!r.reason.includes('published_at')) return { ok: false, detail: 'reason must cite published_at, not discovered_at. Got: ' + r.reason };
+  return { ok: true };
+}, 'T-63: discovered_at позже published_at — published_at авторитетен; вакансия старая');
+
+// T-64: updated_at later than published_at — updated_at is used only as fallback if published_at absent
+runFreshness('T-64', 'freshness-updated-after-published', () => {
+  const vac = {
+    published_at: daysAgo(50),  // old
+    updated_at: daysAgo(5),     // recently updated
+  };
+  const r = window.checkFreshness(vac, PROFILE);
+  // published_at takes priority over updated_at → 50 days old → вероятно устарела
+  if (r.freshness !== 'вероятно устарела') return { ok: false, detail: 'published_at must take priority over updated_at, expected вероятно устарела, got ' + r.freshness };
+  if (!r.reason.includes('published_at')) return { ok: false, detail: 'reason must cite published_at as source. Got: ' + r.reason };
+  return { ok: true };
+}, 'T-64: published_at старый, updated_at свежий — published_at приоритетнее');
+
+// T-65: Page unavailable — not proved closed → вероятно устарела (not закрыта)
+runFreshness('T-65', 'freshness-page-unavailable', () => {
+  const vac = { published_at: daysAgo(10), page_available: false };
+  const r = window.checkFreshness(vac, PROFILE);
+  if (r.freshness !== 'вероятно устарела') return { ok: false, detail: 'page unavailable alone → вероятно устарела (not закрыта), got ' + r.freshness };
+  return { ok: true };
+}, 'T-65: страница недоступна — не доказывает закрытие → вероятно устарела');
+
+// T-66: Closed vacancy — employer explicitly closed it → закрыта
+runFreshness('T-66', 'freshness-closed', () => {
+  const vac = { published_at: daysAgo(10), closed: true };
+  const r = window.checkFreshness(vac, PROFILE);
+  if (r.freshness !== 'закрыта') return { ok: false, detail: 'explicit closed:true → закрыта, got ' + r.freshness };
+  return { ok: true };
+}, 'T-66: вакансия явно закрыта (closed:true) → закрыта');
+
+// T-67: Re-discovery of old vacancy — discovered_at is recent but published_at is still authoritative
+runFreshness('T-67', 'freshness-no-discovered-as-published', () => {
+  const vac = {
+    // No published_at! Only discovered_at. Must yield неизвестно, not актуальна.
+    discovered_at: daysAgo(2),
+    updated_at: null,
+    verified_at: null,
+  };
+  const r = window.checkFreshness(vac, PROFILE);
+  if (r.freshness === 'актуальна') return { ok: false, detail: 'discovered_at MUST NOT be used as published_at — freshness must not be актуальна, got ' + r.freshness };
+  if (r.freshness !== 'неизвестно') return { ok: false, detail: 'without published_at/updated_at/verified_at → неизвестно, got ' + r.freshness };
+  return { ok: true };
+}, 'T-67: только discovered_at (нет published_at/updated_at/verified_at) → неизвестно; discovered_at не подменяет published_at');
+
 // ─── Results output ──────────────────────────────────────────────────────────
 let passed = 0, failed = 0;
 const failures = [];
 const unexpected_passes = [];
 
 console.log('\n╔══════════════════════════════════════════════════════════════╗');
-console.log('║    JOB HUNTER filterFull() + dedup — v3.0 TEST RUN (Stage 3)║');
-console.log('║          Stage 3: dedupVacancies() / vacancyFingerprint()    ║');
+console.log('║   JOB HUNTER filterFull() + dedup + freshness — v4.0 TEST RUN║');
+console.log('║   Stage 4: checkFreshness() — date separation & statuses    ║');
 console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
 console.log(`${'ID'.padEnd(6)} ${'SCENARIO'.padEnd(32)} ${'EXP'.padEnd(5)} ${'GOT'.padEnd(5)} ${'REASON'.padEnd(30)} RESULT`);
@@ -915,12 +1053,37 @@ if (dFailed > 0) {
   console.log('');
 }
 
+// ─── Freshness tests results ──────────────────────────────────────────────────
+console.log('\n╔══════════════════════════════════════════════════════════════╗');
+console.log('║          FRESHNESS TESTS (T-60–T-67) — Stage 4              ║');
+console.log('╚══════════════════════════════════════════════════════════════╝\n');
+
+console.log(`${'ID'.padEnd(6)} ${'SCENARIO'.padEnd(36)} RESULT`);
+console.log('─'.repeat(64));
+for (const t of freshnessTests) {
+  const mark = t.ok ? '✓' : '✗';
+  const detail = t.ok ? '' : '  ← ' + (t.detail || t.notes);
+  console.log(`${t.id.padEnd(6)} ${t.scenario.padEnd(36)} ${mark}${detail}`);
+  if (t.ok) fPassed++; else fFailed++;
+}
+console.log('─'.repeat(64));
+console.log(`\nИТОГО (freshness): ${freshnessTests.length} тестов | ✓ прошло: ${fPassed} | ✗ провалено: ${fFailed}\n`);
+
+if (fFailed > 0) {
+  console.log('══ ПРОВАЛЕНО (freshness) ════════════════════════════════════════');
+  for (const t of freshnessTests) {
+    if (!t.ok) console.log(`\n${t.id} [${t.scenario}]\n  ${t.notes}\n  Детали: ${t.detail}`);
+  }
+  console.log('');
+}
+
 // ─── Infrastructure requirements ─────────────────────────────────────────────
 console.log('══ ИНФРАСТРУКТУРА ═══════════════════════════════════════════');
 console.log('  T-01–T-52: filterFull() — без внешних зависимостей.');
 console.log('  T-53–T-59: dedupVacancies() / vacancyFingerprint() — без внешних зависимостей.');
+console.log('  T-60–T-67: checkFreshness() — без внешних зависимостей.');
 console.log('  Не требуют: hh.ru API, сетевые вызовы, база данных.');
 console.log('');
 
-const totalFailed = failed + dFailed;
+const totalFailed = failed + dFailed + fFailed;
 process.exit(totalFailed > 0 ? 1 : 0);

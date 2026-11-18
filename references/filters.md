@@ -23,7 +23,7 @@ For each vacancy, apply filters in this order:
 #### 5a. Universal filters (apply to ALL users)
 
 1. **Role match** — does the vacancy title match the user's target profession (`job_title` + `keywords` from profile)?
-2. **Freshness** — remove if older than `max_vacancy_age_days` from the profile (default 30 days if not set)
+2. **Freshness** — call `checkFreshness(vacancy, profile)` from `references/freshness.md`. Block if status is `закрыта` (blocked_reason: `freshness-closed`) or `вероятно устарела` (blocked_reason: `freshness-stale`). Keep and flag ⚠️ if status is `неизвестно` — never silently drop. `checkFreshness` reads `max_vacancy_age_days` from the profile (default 30 if not set). **Never use `discovered_at` as a substitute for `published_at`.**
 3. **Deduplication** — run `dedupVacancies(raw_vacancies, history)` from `references/dedup.md` BEFORE `filterFull()`. Confident duplicates are merged (kept as one entry with `seen_in[]`); probable duplicates are merged and flagged with `dedup_flag: 'probable'`; already-seen vacancies (`seen_before: true`) are kept and labelled 👁 in the report. See `references/dedup.md` for the full algorithm, confidence thresholds, and the Agent 1.5 exit checklist.
 4. **Work permit check** — if the vacancy explicitly requires authorization to work in a country where the user does NOT have a permit → flag in report with label ⚠️ Требуется разрешение на работу. Show in separate section.
 5. **English level check** — if the vacancy explicitly requires C1, C2, or "native/fluent English" AND the user's English level is below that threshold → flag with label ⚠️ Требуется уровень [C1/native]. Show in separate section.
