@@ -1,9 +1,9 @@
 # Job Hunter v2.1 — Test Suite & Baseline Results
 
 **Date:** 2026-11-18  
-**Implementation version:** current (pre-v2.1 fixes)  
+**Implementation version:** v2.1 (bugs fixed)  
 **Runner:** `node references/tests.js`  
-**Total tests:** 40 | **Baseline pass:** 40/40
+**Total tests:** 40 | **Pass after fixes:** 40/40
 
 ---
 
@@ -17,18 +17,16 @@ No external dependencies. All filter functions are inlined from `references/filt
 
 ---
 
-## Baseline summary
+## Summary
 
 | Metric | Value |
 |--------|-------|
 | Tests prepared | 40 |
 | Runnable without infrastructure | 40 (100%) |
-| Pass on current implementation | 40 |
-| Fail on current implementation | 0 |
-| Bugs exposed (real, not test errors) | 3 |
+| Pass on v2.1 implementation | 40 |
+| Fail on v2.1 implementation | 0 |
+| Bugs fixed in v2.1 | 3 |
 | Tests requiring extra infrastructure | 0 |
-
-> **Note:** The baseline shows 40/40 because tests were written to reflect *current* behavior — including known bugs. Bug-exposing tests are marked with `[BUG]` or `[BASELINE]` in their notes and document the incorrect behavior. After v2.1 fixes, the expected results for those tests will change.
 
 ---
 
@@ -66,56 +64,60 @@ No external dependencies. All filter functions are inlined from `references/filt
 
 ---
 
-## Bugs discovered
+## Bugs fixed in v2.1
 
-### BUG-A: `резидентов РФ` not covered by RU-only regex (T-16)
+### BUG-A (fixed): `резидентов РФ` not covered by RU-only regex (T-16)
 
 **Severity:** Medium  
-**Test:** T-16  
-**Current behavior:** PASS (vacancy passes through)  
-**Expected behavior:** FAIL with `RU-only`  
-**Root cause:** RU-only regex contains `резидентств[а-яё]*\s+РФ` which matches `резидентства/резидентству` but NOT `резидентов` (genitive plural).  
-**Fix needed:** Add `резидент[а-яё]*\s+РФ` or `для\s+резидент[а-яё]*\s+РФ` to the regex.  
-**After fix:** T-16 expected result changes to `FAIL / 'RU-only'`.
+**Root cause:** RU-only regex contained `резидентств[а-яё]*\s+РФ` which matched `резидентства/резидентству` but NOT `резидентов` (genitive plural).  
+**Fix:** Changed to `резидент[а-яё]*\s+РФ` — covers all case forms (резидентов, резидента, резиденту, etc.)  
+**Tests:** T-16 → `FAIL / 'RU-only'` ✓
 
 ---
 
-### BUG-B: `role_exclusions` unreachable when keyword-match fails first (T-22, T-23)
+### BUG-B (fixed): `role_exclusions` unreachable when keyword-match failed first (T-22, T-23)
 
-**Severity:** Low (vacancies are still correctly rejected, just for wrong reason)  
-**Tests:** T-22 (`QA аналитик`), T-23 (`DevOps/аналитик инфраструктуры`)  
-**Current behavior:** `role-mismatch` (keywords not found in title)  
-**Expected behavior:** `role-excluded:QA` / `role-excluded:DevOps`  
-**Root cause:** `role_exclusions` check runs after keyword-match. If no keyword matches, the function returns `role-mismatch` before reaching `role_exclusions`. This means vacancies like `QA аналитик` are rejected, but the reason is wrong — it should be caught by exclusion, not by missing keyword.  
-**Impact:** Mostly cosmetic in current form, but would become a real bug if keyword list expands (e.g., adding bare `аналитик` as a keyword — then QA аналитик would pass keyword check but exclusion must catch it).  
-**Fix needed:** Move `role_exclusions` check before keyword-match, or add a separate pre-filter pass.  
-**After fix:** T-22 expected → `FAIL / 'role-excluded:'`, T-23 → `FAIL / 'role-excluded:'`.
+**Severity:** Low  
+**Root cause:** `role_exclusions` check ran after keyword-match. Vacancies like `QA аналитик` were rejected with `role-mismatch` instead of `role-excluded:QA`.  
+**Impact:** Cosmetic in current form, but would become a real correctness bug if bare `аналитик` keyword were added.  
+**Fix:** Moved `role_exclusions` to Pass 1 (before keyword-match).  
+**Tests:** T-22 → `FAIL / 'role-excluded:QA'` ✓, T-23 → `FAIL / 'role-excluded:DevOps'` ✓
 
 ---
 
-### BUG-C: `intern/junior/trainee` checks unreachable for non-keyword titles (T-05, T-06, T-34)
+### BUG-C (fixed): `intern/junior/trainee` checks unreachable for non-keyword titles (T-05, T-06, T-34)
 
-**Severity:** Low (same as BUG-B — still rejected, wrong reason)  
-**Tests:** T-05 (`Стажёр-аналитик`), T-06 (`Младший аналитик`), T-34 (`Trainee Analyst`)  
-**Current behavior:** `role-mismatch`  
-**Expected behavior:** `intern` or `junior`  
-**Root cause:** intern/junior checks run AFTER keyword-match. If the title contains stажёр/junior/trainee but keyword is not present, role-mismatch fires first.  
-**Impact:** Same as BUG-B — cosmetic for now, could become real if keywords expand.  
-**Fix needed:** Move intern/junior/trainee check before or alongside keyword-match.  
-**After fix:** T-05 → `FAIL / 'intern'`, T-06 → `FAIL / 'junior'`, T-34 → `FAIL / 'junior'`.
+**Severity:** Low  
+**Root cause:** intern/junior checks ran AFTER keyword-match. Titles like `Стажёр-аналитик`, `Младший аналитик`, `Trainee Analyst` were rejected with `role-mismatch` instead of `intern`/`junior`.  
+**Fix:** Moved intern/junior/trainee checks to Pass 1 (before keyword-match).  
+**Tests:** T-05 → `FAIL / 'intern'` ✓, T-06 → `FAIL / 'junior'` ✓, T-34 → `FAIL / 'junior'` ✓
 
 ---
 
-## Tests that will change expected result after v2.1 fixes
+### Additional fix: T-02 expected result updated
 
-| Test | Current expected | After fix expected | Reason |
-|------|-----------------|-------------------|--------|
-| T-05 | `FAIL / role-mismatch` | `FAIL / intern` | BUG-C fix |
-| T-06 | `FAIL / role-mismatch` | `FAIL / junior` | BUG-C fix |
-| T-16 | `PASS / ''` | `FAIL / RU-only` | BUG-A fix |
-| T-22 | `FAIL / role-mismatch` | `FAIL / role-excluded:` | BUG-B fix |
-| T-23 | `FAIL / role-mismatch` | `FAIL / role-excluded:` | BUG-B fix |
-| T-34 | `FAIL / role-mismatch` | `FAIL / junior` | BUG-C fix |
+After BUG-B fix, `role_exclusions` now fire before keyword-match.  
+`Frontend разработчик React` — `разработчик` is in `role_exclusions`, so now returns `role-excluded:разработчик` instead of `role-mismatch`.  
+**Updated:** T-02 expected → `FAIL / 'role-excluded:разработчик'` ✓
+
+---
+
+## filterFull() — new execution order (v2.1)
+
+```
+Pass 1 (title-only hard stops, before keyword match):
+  → probation-hh check
+  → intern / стажёр / trainee check   [BUG-C fix]
+  → role_exclusions check              [BUG-B fix]
+
+Pass 2 (role match):
+  → keyword/job_title match in title
+
+Pass 3 (personal filters):
+  → RU-only geo check (expanded regex)  [BUG-A fix]
+  → user_blockers_global (full text)
+  → user_blockers_tech (requirements block only)
+```
 
 ---
 
