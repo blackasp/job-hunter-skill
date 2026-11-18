@@ -24,16 +24,19 @@ window.filterFull = (name, desc, vac, profile) => {
   if (vac && vac.employment?.id === 'probation') return { pass: false, reason: 'probation-hh' };
   const titleOnly = (name || '').replace(/\s+/g, ' ').trim();
   const full = (titleOnly + ' ' + (desc || '')).replace(/\s+/g, ' ');
-  const roles = (profile.keywords || []).concat(profile.job_title ? [profile.job_title] : []).map(esc).join('|');
-  if (roles && !new RegExp(roles, 'i').test(titleOnly)) return { pass: false, reason: 'role-mismatch' };
+  // Pass 1: title-only hard stops (before keyword match — fix BUG-B, BUG-C)
   if (profile.experience_level && profile.experience_level !== 'junior') {
     if (/стажировк|стажер|стажёр|стажёром|ученик|ищем\s+стаж/i.test(titleOnly)) return { pass: false, reason: 'intern' };
     if (window.W('junior|intern|trainee|apprentice').test(titleOnly)) return { pass: false, reason: 'junior' };
     if (/младший\s+аналитик/i.test(titleOnly)) return { pass: false, reason: 'junior' };
   }
   for (const r of (profile.role_exclusions || [])) if (wordRe(r).test(titleOnly)) return { pass: false, reason: 'role-excluded:' + r };
+  // Pass 2: role match
+  const roles = (profile.keywords || []).concat(profile.job_title ? [profile.job_title] : []).map(esc).join('|');
+  if (roles && !new RegExp(roles, 'i').test(titleOnly)) return { pass: false, reason: 'role-mismatch' };
+  // Pass 3: personal filters (fix BUG-A: резидент[а-яё]* covers резидентов/резидента etc.)
   if ((profile.geo_exclusions || []).some(g => /^ru-only$/i.test(g)) &&
-      /удалённо\s+по\s+Росси|удаленно\s+по\s+Росси|удалённо\s+по\s+РФ|удаленно\s+по\s+РФ|на\s+территории\s+РФ|на\s+территории\s+России|работ[а-яё]*\s+в\s+РФ|только\s+в\s+РФ|только\s+в\s+России|резидентств[а-яё]*\s+РФ|только\s+для\s+граждан\s+РФ|только\s+граждан[а-яё]*\s+РФ/i.test(full))
+      /удалённо\s+по\s+Росси|удаленно\s+по\s+Росси|удалённо\s+по\s+РФ|удаленно\s+по\s+РФ|на\s+территории\s+РФ|на\s+территории\s+России|работ[а-яё]*\s+в\s+РФ|только\s+в\s+РФ|только\s+в\s+России|резидент[а-яё]*\s+РФ|только\s+для\s+граждан\s+РФ|только\s+граждан[а-яё]*\s+РФ/i.test(full))
     return { pass: false, reason: 'RU-only' };
   const globalB = profile.user_blockers_global || profile.user_blockers || [];
   for (const b of globalB) if (wordRe(b).test(full)) return { pass: false, reason: 'blocker-global:' + b };
@@ -111,7 +114,7 @@ const tests = [
     `Требования:
 Опыт работы с React от 2 лет.
 Знание TypeScript.`,
-    {}, FAIL, 'role-mismatch', 'Не аналитик — должен отклониться по role-mismatch'),
+    {}, FAIL, 'role-excluded:разработчик', '"разработчик" в role_exclusions — отклоняется до role-match'),
 
   run('T-03', 'role-mismatch',
     'Менеджер по продажам',
@@ -127,23 +130,17 @@ const tests = [
 Опыт от 0 лет. Готовы обучать.`,
     {}, FAIL, 'junior', 'Junior в заголовке — должен отклониться'),
 
-  // BUG-NOTE: «Стажёр-аналитик» отклоняется по role-mismatch (keyword не найден в заголовке),
-  // а не по intern-check. intern-check проверяет titleOnly ПОСЛЕ keyword-match.
-  // В текущей реализации нет keyword «аналитик» без квалификатора => role-mismatch.
-  // Это корректный результат (отклонена), но по неправильной причине — intern-check
-  // недостижим для слов «стажёр/стажировка» в заголовке, если нет keyword-match.
+  // FIX BUG-C: intern/junior/trainee checks now run BEFORE keyword-match
   run('T-05', 'intern-title',
     'Стажёр-аналитик',
     'Стажировка для студентов и выпускников.',
-    {}, FAIL, 'role-mismatch', // baseline: отклоняется раньше по role-mismatch
-    '[BASELINE] Стажёр-аналитик отклоняется по role-mismatch (не по intern — intern-check не достигается)'),
+    {}, FAIL, 'intern', 'Стажёр в заголовке — должен отклониться по intern'),
 
-  // BUG-NOTE: аналогично — «Младший аналитик» без keyword match => role-mismatch первым
+  // FIX BUG-C: «Младший аналитик» теперь ловится junior-check до keyword-match
   run('T-06', 'junior-title-2',
     'Младший аналитик',
     `Требования: опыт от 1 года.`,
-    {}, FAIL, 'role-mismatch', // baseline: role-mismatch
-    '[BASELINE] Младший аналитик отклоняется по role-mismatch (не по junior-check)'),
+    {}, FAIL, 'junior', 'Младший аналитик — должен отклониться по junior'),
 
   // ══════════════════════════════════════════════════════════════════
   // SCENARIO 4: Probation (стажировка в hh.ru employment type)
@@ -257,10 +254,6 @@ const tests = [
 Удалённо по РФ. Гражданство РФ.`,
     {}, FAIL, 'RU-only', '"удалённо по РФ" — должен отклониться'),
 
-  // BUG-NOTE: «только для резидентов РФ» НЕ покрыто RU-only regex!
-  // Regex содержит «резидентств[а-яё]*\s+РФ» — это «резидентства», «резидентству» и т.д.
-  // Но НЕ «резидентов» (другой суффикс).
-  // Это реальный баг в фильтре — FAIL ожидается по смыслу, но реализация возвращает PASS.
   run('T-16', 'ru-only-residents',
     'Системный аналитик',
     `Требования:
@@ -268,8 +261,7 @@ const tests = [
 
 Условия:
 Только для резидентов РФ. Полная занятость.`,
-    {}, PASS, '', // BASELINE: баг — реализация не блокирует «резидентов РФ»
-    '[BUG] «только для резидентов РФ» НЕ блокируется — regex покрывает только «резидентства»'),
+    {}, FAIL, 'RU-only', '"только для резидентов РФ" — должен отклониться'),
 
   run('T-17', 'ru-only-worldwide',
     'Системный аналитик',
@@ -323,24 +315,17 @@ const tests = [
   // ══════════════════════════════════════════════════════════════════
   // SCENARIO 9: role_exclusions
   // ══════════════════════════════════════════════════════════════════
-  // BUG-NOTE: role_exclusions проверяются ПОСЛЕ role-match.
-  // «QA аналитик» — keyword «аналитик» без квалификатора не в keywords-листе,
-  // поэтому role-mismatch срабатывает раньше, чем role_exclusions.
-  // Вакансия всё равно отклоняется, но не по exclusion.
   run('T-22', 'role-excluded-qa',
     'QA аналитик',
     `Требования:
 Опыт тестирования ПО от 2 лет.`,
-    {}, FAIL, 'role-mismatch', // baseline: role-mismatch первым
-    '[BASELINE] QA аналитик — role-mismatch срабатывает раньше role_exclusions'),
+    {}, FAIL, 'role-excluded:QA', '"QA аналитик" — должен отклониться по role_exclusions'),
 
-  // BUG-NOTE: аналогично DevOps/аналитик — role-mismatch первым
   run('T-23', 'role-excluded-devops',
     'DevOps/аналитик инфраструктуры',
     `Требования:
 Знание Kubernetes, Terraform.`,
-    {}, FAIL, 'role-mismatch', // baseline: role-mismatch первым
-    '[BASELINE] DevOps/аналитик — role-mismatch срабатывает раньше role_exclusions'),
+    {}, FAIL, 'role-excluded:DevOps', '"DevOps/аналитик инфраструктуры" — должен отклониться по role_exclusions'),
 
   // ══════════════════════════════════════════════════════════════════
   // SCENARIO 10: SAP глобальный блокер
@@ -463,13 +448,10 @@ SQL, Python, A/B testing.`,
   // ══════════════════════════════════════════════════════════════════
   // SCENARIO 20: Trainee в заголовке (английский эквивалент)
   // ══════════════════════════════════════════════════════════════════
-  // BUG-NOTE: «Trainee Analyst» — «Analyst» не в keywords => role-mismatch первым.
-  // trainee-check не достигается. Аналогично T-05.
   run('T-34', 'trainee-title',
     'Trainee Analyst',
     'Requirements: no experience needed.',
-    {}, FAIL, 'role-mismatch', // baseline
-    '[BASELINE] Trainee Analyst — role-mismatch первым (keyword «Analyst» без квалификатора не в списке)'),
+    {}, FAIL, 'junior', '"Trainee Analyst" — должен отклониться по intern/trainee-check'),
 
   // ══════════════════════════════════════════════════════════════════
   // BONUS: Граничные случаи

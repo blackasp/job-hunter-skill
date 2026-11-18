@@ -58,9 +58,8 @@ window.filterFull = (name, desc, vac, profile) => {
   const titleOnly = (name || '').replace(/\s+/g, ' ').trim();
   const full = (titleOnly + ' ' + (desc || '')).replace(/\s+/g, ' ');
 
-  // Pass 1: title only (role match + seniority)
-  const roles = (profile.keywords || []).concat(profile.job_title ? [profile.job_title] : []).map(esc).join('|');
-  if (roles && !new RegExp(roles, 'i').test(titleOnly)) return { pass: false, reason: 'role-mismatch' };
+  // Pass 1: title-only hard stops (checked before keyword match so they fire even on
+  // non-keyword titles like «Стажёр-аналитик», «QA аналитик», «Trainee Analyst»)
   if (profile.experience_level && profile.experience_level !== 'junior') {
     if (/стажировк|стажер|стажёр|стажёром|ученик|ищем\s+стаж/i.test(titleOnly)) return { pass: false, reason: 'intern' };
     if (W('junior|intern|trainee|apprentice').test(titleOnly)) return { pass: false, reason: 'junior' };
@@ -68,9 +67,13 @@ window.filterFull = (name, desc, vac, profile) => {
   }
   for (const r of (profile.role_exclusions || [])) if (wordRe(r).test(titleOnly)) return { pass: false, reason: 'role-excluded:' + r };
 
-  // Pass 2: personal filters
+  // Pass 2: role match (keyword must appear in title)
+  const roles = (profile.keywords || []).concat(profile.job_title ? [profile.job_title] : []).map(esc).join('|');
+  if (roles && !new RegExp(roles, 'i').test(titleOnly)) return { pass: false, reason: 'role-mismatch' };
+
+  // Pass 3: personal filters
   if ((profile.geo_exclusions || []).some(g => /^ru-only$/i.test(g)) &&
-      /удалённо\s+по\s+Росси|удаленно\s+по\s+Росси|удалённо\s+по\s+РФ|удаленно\s+по\s+РФ|на\s+территории\s+РФ|на\s+территории\s+России|работ[а-яё]*\s+в\s+РФ|только\s+в\s+РФ|только\s+в\s+России|резидентств[а-яё]*\s+РФ|только\s+для\s+граждан\s+РФ|только\s+граждан[а-яё]*\s+РФ/i.test(full))
+      /удалённо\s+по\s+Росси|удаленно\s+по\s+Росси|удалённо\s+по\s+РФ|удаленно\s+по\s+РФ|на\s+территории\s+РФ|на\s+территории\s+России|работ[а-яё]*\s+в\s+РФ|только\s+в\s+РФ|только\s+в\s+России|резидент[а-яё]*\s+РФ|только\s+для\s+граждан\s+РФ|только\s+граждан[а-яё]*\s+РФ/i.test(full))
     return { pass: false, reason: 'RU-only' };
 
   const globalB = profile.user_blockers_global || profile.user_blockers || [];
