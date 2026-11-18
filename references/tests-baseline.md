@@ -1,9 +1,9 @@
 # Job Hunter v2.1 — Test Suite & Baseline Results
 
 **Date:** 2026-11-18  
-**Implementation version:** v2.1 (bugs fixed)  
+**Implementation version:** v2.1 (Stage 4 — freshness + dedup + filter)  
 **Runner:** `node references/tests.js`  
-**Total tests:** 40 | **Pass after fixes:** 40/40
+**Total tests:** 67 | **Pass:** 67/67
 
 ---
 
@@ -13,7 +13,8 @@
 node references/tests.js
 ```
 
-No external dependencies. All filter functions are inlined from `references/filters.md`. Requires Node.js 16+.
+No external dependencies. All filter, dedup and freshness functions are inlined from their
+respective reference files. Requires Node.js 16+.
 
 ---
 
@@ -21,16 +22,19 @@ No external dependencies. All filter functions are inlined from `references/filt
 
 | Metric | Value |
 |--------|-------|
-| Tests prepared | 40 |
-| Runnable without infrastructure | 40 (100%) |
-| Pass on v2.1 implementation | 40 |
-| Fail on v2.1 implementation | 0 |
-| Bugs fixed in v2.1 | 3 |
-| Tests requiring extra infrastructure | 0 |
+| Tests prepared | 67 |
+| Runnable without infrastructure | 67 (100%) |
+| Pass on current implementation | 67 |
+| Fail on current implementation | 0 |
+| Filter tests (T-01–T-52) | 52 |
+| Dedup tests (T-53–T-59) | 7 |
+| Freshness tests (T-60–T-67) | 8 |
 
 ---
 
-## Scenario coverage
+## Test groups
+
+### Filter tests (T-01–T-52)
 
 | # | Scenario type | Tests | IDs |
 |---|--------------|-------|-----|
@@ -61,48 +65,62 @@ No external dependencies. All filter functions are inlined from `references/filt
 | — | "аналитик" without qualifier | 1 | T-38 |
 | — | Intern in desc, not title | 1 | T-39 |
 | — | Tech blocker Oracle APEX | 1 | T-40 |
+| — | Nice-to-have section — no block (3 cases) | 3 | T-41, T-42, T-43 |
+| — | Blocker in req AND nice-to-have | 1 | T-44 |
+| — | No headings safe default | 1 | T-45 |
+| — | No headings pass | 1 | T-46 |
+| — | Only non-technical sections | 1 | T-47 |
+| — | Global blocker in О компании | 1 | T-48 |
+| — | Pass returns checks array | 1 | T-49 |
+| — | Blocker Битрикс (Cyrillic) | 1 | T-50 |
+| — | Желательно — no block | 1 | T-51 |
+| — | Nice-to-have EN — no block | 1 | T-52 |
+
+### Dedup tests (T-53–T-59)
+
+| ID | Scenario |
+|----|----------|
+| T-53 | Two platforms, same vacancy — merge |
+| T-54 | Canonical URL match |
+| T-55 | seen_before from history |
+| T-56 | Probable duplicate — same company, similar title |
+| T-57 | Different cities — distinct vacancies |
+| T-58 | Different companies — distinct vacancies |
+| T-59 | No data loss after merge |
+
+### Freshness tests (T-60–T-67)
+
+| ID | Scenario |
+|----|----------|
+| T-60 | Fresh vacancy within threshold |
+| T-61 | Old vacancy beyond threshold |
+| T-62 | Unknown date — no published_at/updated_at/verified_at |
+| T-63 | Re-discovery: discovered_at later but published_at still old |
+| T-64 | updated_at after published_at — updated_at used if published_at absent |
+| T-65 | Page unavailable — вероятно устарела (not закрыта) |
+| T-66 | Explicit closure — закрыта |
+| T-67 | discovered_at NEVER used as published_at |
 
 ---
 
-## Bugs fixed in v2.1
+## Bugs fixed in filter (v2.1)
 
-### BUG-A (fixed): `резидентов РФ` not covered by RU-only regex (T-16)
+### BUG-A: `резидентов РФ` not covered by RU-only regex (T-16)
+**Fix:** `резидент[а-яё]*\s+РФ` — covers all case forms.
 
-**Severity:** Medium  
-**Root cause:** RU-only regex contained `резидентств[а-яё]*\s+РФ` which matched `резидентства/резидентству` but NOT `резидентов` (genitive plural).  
-**Fix:** Changed to `резидент[а-яё]*\s+РФ` — covers all case forms (резидентов, резидента, резиденту, etc.)  
-**Tests:** T-16 → `FAIL / 'RU-only'` ✓
+### BUG-B: `role_exclusions` unreachable when keyword-match failed first (T-22, T-23)
+**Fix:** Moved `role_exclusions` to Pass 1 (before keyword-match).
 
----
+### BUG-C: `intern/junior/trainee` checks unreachable for non-keyword titles (T-05, T-06, T-34)
+**Fix:** Moved intern/junior/trainee checks to Pass 1 (before keyword-match).
 
-### BUG-B (fixed): `role_exclusions` unreachable when keyword-match failed first (T-22, T-23)
-
-**Severity:** Low  
-**Root cause:** `role_exclusions` check ran after keyword-match. Vacancies like `QA аналитик` were rejected with `role-mismatch` instead of `role-excluded:QA`.  
-**Impact:** Cosmetic in current form, but would become a real correctness bug if bare `аналитик` keyword were added.  
-**Fix:** Moved `role_exclusions` to Pass 1 (before keyword-match).  
-**Tests:** T-22 → `FAIL / 'role-excluded:QA'` ✓, T-23 → `FAIL / 'role-excluded:DevOps'` ✓
+### BUG-6: `requirementsBlock()` returning full text when only nice-to-have headings present
+**Fix:** `return out.trim() || ''` — empty string when no requirements sections found.
+Tests: T-41–T-52 (12 tests added in Stage 2).
 
 ---
 
-### BUG-C (fixed): `intern/junior/trainee` checks unreachable for non-keyword titles (T-05, T-06, T-34)
-
-**Severity:** Low  
-**Root cause:** intern/junior checks ran AFTER keyword-match. Titles like `Стажёр-аналитик`, `Младший аналитик`, `Trainee Analyst` were rejected with `role-mismatch` instead of `intern`/`junior`.  
-**Fix:** Moved intern/junior/trainee checks to Pass 1 (before keyword-match).  
-**Tests:** T-05 → `FAIL / 'intern'` ✓, T-06 → `FAIL / 'junior'` ✓, T-34 → `FAIL / 'junior'` ✓
-
----
-
-### Additional fix: T-02 expected result updated
-
-After BUG-B fix, `role_exclusions` now fire before keyword-match.  
-`Frontend разработчик React` — `разработчик` is in `role_exclusions`, so now returns `role-excluded:разработчик` instead of `role-mismatch`.  
-**Updated:** T-02 expected → `FAIL / 'role-excluded:разработчик'` ✓
-
----
-
-## filterFull() — new execution order (v2.1)
+## filterFull() execution order (current)
 
 ```
 Pass 1 (title-only hard stops, before keyword match):
@@ -121,9 +139,20 @@ Pass 3 (personal filters):
 
 ---
 
+## Regression history
+
+| Version | Filter | Dedup | Freshness | Total |
+|---------|--------|-------|-----------|-------|
+| v2.1 initial (before Stage 2) | 40/40 | — | — | 40 |
+| v2.2 (Stage 2 — dedup) | 40/40 | 7/7 | — | 47 |
+| v2.2 (Stage 2 — requirementsBlock T-41..52 added) | 52/52 | 7/7 | — | 59 |
+| v2.1 final (Stage 4 — freshness) | 52/52 | 7/7 | 8/8 | **67/67** |
+
+---
+
 ## Tests requiring additional infrastructure
 
-None. All 40 tests run with `filterFull()` inlined — no network, no database, no hh.ru API.
+None. All 67 tests run with functions inlined — no network, no database, no hh.ru API.
 
 Potential future tests requiring infrastructure:
 - **Agent 1 (search):** mock hh.ru API responses → test pagination, freshness stop, deduplication

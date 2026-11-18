@@ -168,10 +168,12 @@ Before starting Agent 1, run the recovery check above (Шаги R-1–R-2). Only
 - Write `raw_vacancies[]` to in-session variable before moving on
 
 **Step 2 — Start Agent 2 (Filter)**
-- Load: `references/filters.md` ONLY
+- Load: `references/filters.md` AND `references/dedup.md` AND `references/freshness.md`
 - Pass `raw_vacancies[]` from Step 1
 - Do NOT load apply.md or report.md at this step
-- Agent 2 applies `filterFull()` to every item
+- Agent 2 first runs `dedupVacancies(raw_vacancies, history)` → produces `deduped_vacancies[]`
+- Agent 2 then calls `checkFreshness(vacancy, profile)` for each vacancy (freshness gate)
+- Agent 2 then applies `filterFull()` to every item
 - Agent 2 returns `filtered_vacancies[]` (with `blocked`, `needs_manual` flags)
 - Write `filtered_vacancies[]` to in-session variable before moving on
 
