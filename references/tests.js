@@ -13,11 +13,11 @@ window.requirementsBlock = (desc) => {
   const text = (desc || '').replace(/\r/g, '');
   const head = /^\s*(требовани[яй]|ожидани[яй]|обязанности|задачи|чем\s+предстоит\s+заниматься|что\s+нужно\s+делать|requirements|responsibilities|you\s+will|what\s+you.ll\s+do|будет\s+плюсом|желательно|nice\s+to\s+have|условия|мы\s+предлагаем|о\s+компании|бонусы)[^\n]{0,40}:?\s*$/gim;
   const marks = [...text.matchAll(head)].map(m => ({ i: m.index, name: m[1].toLowerCase() }));
-  if (!marks.length) return text;
+  if (!marks.length) return text;   // no structure => whole text (safe default)
   const counts = /^(требовани|ожидани|обязанност|задачи|чем|что\s+нужно|requirements|responsibilities|you|what)/;
   let out = '';
   marks.forEach((m, k) => { if (counts.test(m.name)) out += text.slice(m.i, marks[k + 1] ? marks[k + 1].i : text.length) + '\n'; });
-  return out.trim() ? out : text;
+  return out.trim() || '';   // structure found but no requirements sections => empty (fix BUG-6)
 };
 
 window.filterFull = (name, desc, vac, profile) => {
@@ -41,9 +41,10 @@ window.filterFull = (name, desc, vac, profile) => {
   const globalB = profile.user_blockers_global || profile.user_blockers || [];
   for (const b of globalB) if (wordRe(b).test(full)) return { pass: false, reason: 'blocker-global:' + b };
   const req = window.requirementsBlock(desc);
-  const reqFull = titleOnly + ' ' + req;
+  const reqFull = titleOnly + (req ? ' ' + req : '');
   for (const b of (profile.user_blockers_tech || [])) if (wordRe(b).test(reqFull)) return { pass: false, reason: 'blocker-tech:' + b };
-  return { pass: true };
+  const checks = ['experience-level', 'role-exclusions', 'role-match', 'geo-exclusions', 'blockers-global', 'blockers-tech'];
+  return { pass: true, checks };
 };
 
 // ─── Mari's real profile (from /areas/job-hunter-profile.md) ────────────────
@@ -76,15 +77,17 @@ function makeVac(overrides = {}) {
   };
 }
 
-function run(id, scenario, name, desc, vacOverrides, expectedPass, expectedReasonPrefix, notes) {
+function run(id, scenario, name, desc, vacOverrides, expectedPass, expectedReasonPrefix, notes, extraCheck) {
   const vac = makeVac(vacOverrides);
   const result = window.filterFull(name, desc, vac, PROFILE);
   const passOk = result.pass === expectedPass;
   const reasonOk = expectedReasonPrefix
     ? (result.reason || '').startsWith(expectedReasonPrefix)
     : true;
-  const ok = passOk && reasonOk;
-  return { id, scenario, name, expected: expectedPass, got: result.pass, reason: result.reason || '', expectedReason: expectedReasonPrefix || '', ok, notes };
+  const extraOk = extraCheck ? extraCheck(result) : true;
+  const ok = passOk && reasonOk && extraOk;
+  const extraNote = (!extraOk && extraCheck) ? ' [extra-check failed]' : '';
+  return { id, scenario, name, expected: expectedPass, got: result.pass, reason: result.reason || '', expectedReason: expectedReasonPrefix || '', ok, notes: notes + extraNote };
 }
 
 // ─── TEST CASES ──────────────────────────────────────────────────────────────
@@ -361,11 +364,11 @@ const tests = [
 
 О компании:
 Лидер рынка геймдев.`,
-    // Только заголовки "мы предлагаем", "бонусы", "о компании" — ни один не попадает в counts
-    // requirementsBlock вернёт весь текст (fallback #2)
-    // => tech blocker "геймдев" сработает
-    // ОЖИДАНИЕ: FAIL с blocker-tech
-    {}, FAIL, 'blocker-tech:', 'T-26: fallback #2 — только "мы предлагаем/бонусы/о компании", весь текст = req'),
+    // BUG-6 FIX: только "мы предлагаем", "бонусы", "о компании" — ни один не requirements-секция
+    // requirementsBlock возвращает '' (пустую строку, не весь текст)
+    // => tech blocker "геймдев" НЕ срабатывает
+    // ОЖИДАНИЕ: PASS (правильное поведение после fix)
+    {}, PASS, '', 'T-26: BUG-6 fix — только мы предлагаем/бонусы/о компании — геймдев там не блокирует'),
 
   // ══════════════════════════════════════════════════════════════════
   // SCENARIO 13: Вакансия data analyst — keyword match
@@ -517,6 +520,117 @@ Remote-friendly, worldwide team.`,
 Знание Oracle APEX обязательно для данной позиции.`,
     {}, FAIL, 'blocker-tech:', 'Oracle APEX в требованиях — tech blocker'),
 
+  // ══════════════════════════════════════════════════════════════════
+  // STAGE 2 TESTS — проверка BUG-6 и поведения requirementsBlock
+  // ══════════════════════════════════════════════════════════════════
+
+  // BUG-6: tech blocker только в «Будет плюсом» — НЕ должен блокировать
+  run('T-41', 'nice-to-have-no-block',
+    'Системный аналитик',
+    `Требования:
+Опыт работы системным аналитиком от 3 лет.
+Знание UML, REST API.
+
+Будет плюсом:
+Опыт работы с Oracle APEX.`,
+    {}, PASS, '', 'T-41: Oracle APEX только в Будет плюсом — не должен блокировать (BUG-6 fix)'),
+
+  // BUG-6: tech blocker только в «Условия» — НЕ должен блокировать
+  run('T-42', 'conditions-no-block',
+    'Системный аналитик',
+    `Условия:
+Удалённая работа.
+Oracle APEX используется в отдельных проектах, но не обязателен.`,
+    {}, PASS, '', 'T-42: Oracle APEX только в Условия — не должен блокировать (BUG-6 fix)'),
+
+  // BUG-6: tech blocker только в «О компании» — НЕ должен блокировать
+  run('T-43', 'about-company-no-block',
+    'Системный аналитик',
+    `О компании:
+Мы разрабатываем решения на Oracle APEX для клиентов.
+
+Задачи:
+Анализ требований бизнеса.`,
+    {}, PASS, '', 'T-43: Oracle APEX только в О компании — не должен блокировать (BUG-6 fix)'),
+
+  // BUG-6: tech blocker В требованиях И в Будет плюсом — должен блокировать (по требованиям)
+  // Note: не используем SAP здесь (global blocker сработает раньше); используем Oracle APEX в обоих местах
+  run('T-44', 'blocker-in-req-and-nice-to-have',
+    'Системный аналитик',
+    `Требования:
+Знание Oracle APEX обязательно.
+
+Будет плюсом:
+Опыт с Oracle APEX и другими BI инструментами.`,
+    {}, FAIL, 'blocker-tech:', 'T-44: Oracle APEX в требованиях (и в Будет плюсом) — должен блокировать по требованиям'),
+
+  // Нет заголовков совсем — весь текст как требования (safe default)
+  run('T-45', 'no-headings-safe-default',
+    'Системный аналитик',
+    `Компания ищет аналитика. Oracle APEX обязателен для работы на проекте.`,
+    {}, FAIL, 'blocker-tech:', 'T-45: нет заголовков, Oracle APEX в тексте — весь текст = требования, блокировать'),
+
+  // Нет заголовков, нет tech blockers — должна пройти
+  run('T-46', 'no-headings-pass',
+    'Системный аналитик',
+    `Компания ищет опытного системного аналитика для работы с REST API и UML.`,
+    {}, PASS, '', 'T-46: нет заголовков, нет blockers — должна пройти'),
+
+  // Только «Будет плюсом» и «Условия», нет requirements-секций — Bitrix не блокирует
+  run('T-47', 'only-nontechnical-sections',
+    'Системный аналитик',
+    `Будет плюсом:
+Знание Bitrix желательно.
+
+Условия:
+Удалённая работа, зарплата 200k.`,
+    {}, PASS, '', 'T-47: только Будет плюсом+Условия, Bitrix там — не блокировать (BUG-6 fix)'),
+
+  // global blocker (1С) в О компании — ДОЛЖЕН блокировать (global = весь текст)
+  run('T-48', 'global-blocker-in-about-company',
+    'Системный аналитик',
+    `О компании:
+Мы — крупный вендор 1С в России.
+
+Требования:
+Опыт системного анализа.`,
+    {}, FAIL, 'blocker-global:', 'T-48: 1С в О компании — global blocker должен сработать'),
+
+  // filterFull возвращает checks при pass: true
+  run('T-49', 'pass-returns-checks',
+    'Системный аналитик',
+    `Требования:
+Опыт работы от 3 лет.`,
+    {}, PASS, '', 'T-49: пройденная вакансия должна иметь checks в результате',
+    r => Array.isArray(r.checks) && r.checks.length > 0),
+
+  // Tech blocker «Битрикс» (кириллица) в требованиях — должен блокировать
+  run('T-50', 'blocker-bitrix-cyrillic',
+    'Системный аналитик',
+    `Требования:
+Опыт работы с Битрикс обязателен.`,
+    {}, FAIL, 'blocker-tech:', 'T-50: Битрикс (кириллица) в требованиях — tech blocker'),
+
+  // «Желательно» section — не должно блокировать tech blocker
+  run('T-51', 'jelatelno-no-block',
+    'Системный аналитик',
+    `Требования:
+Опыт работы от 3 лет.
+
+Желательно:
+Знание Битрикс приветствуется.`,
+    {}, PASS, '', 'T-51: Битрикс только в Желательно — не должен блокировать'),
+
+  // «Nice to have» (english) — не должно блокировать tech blocker
+  run('T-52', 'nice-to-have-en-no-block',
+    'Systems Analyst',
+    `Requirements:
+Experience with REST API, SQL.
+
+Nice to have:
+Bitrix experience is a plus.`,
+    {}, PASS, '', 'T-52: Bitrix только в Nice to have (EN) — не должен блокировать'),
+
 ];
 
 // ─── Results output ──────────────────────────────────────────────────────────
@@ -525,8 +639,8 @@ const failures = [];
 const unexpected_passes = [];
 
 console.log('\n╔══════════════════════════════════════════════════════════════╗');
-console.log('║           JOB HUNTER filterFull() — BASELINE TEST RUN       ║');
-console.log('║                     Current implementation                   ║');
+console.log('║        JOB HUNTER filterFull() — v2.2 TEST RUN (Stage 2)    ║');
+console.log('║          BUG-6 fix: requirementsBlock fallback corrected     ║');
 console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
 console.log(`${'ID'.padEnd(6)} ${'SCENARIO'.padEnd(32)} ${'EXP'.padEnd(5)} ${'GOT'.padEnd(5)} ${'REASON'.padEnd(30)} RESULT`);
