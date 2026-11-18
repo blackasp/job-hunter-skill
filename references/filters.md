@@ -1,5 +1,21 @@
 # Filtering and ranking reference
 
+## Profile criteria categories
+
+Each criterion in the user's profile belongs to exactly one category. These categories must never be mixed — an absence of information is never automatically a pass or a fail.
+
+| Category | Profile fields | Behaviour when matched | Behaviour when absent/unknown |
+|---|---|---|---|
+| **Absolute exclusions** | `experience_level` (intern/junior check), `role_exclusions`, `employment.id === 'probation'` | Always block immediately (Pass 1, title only) | n/a — these checks are skipped if the field is unset |
+| **Mandatory role condition** | `keywords`, `job_title` | Must match title; no match → block (Pass 2) | If both are empty: skip check (all titles pass) |
+| **Hard personal filters** | `geo_exclusions`, `user_blockers_global`, `user_blockers_tech` | Block on first match in the appropriate text scope | Skipped if list is empty |
+| **Desirable / optional** | (none in `filterFull` — handled outside the filter) | Do not block; may be used for ranking | Absence does not reduce score |
+| **Unknown / unverifiable** | Salary, work format, English level, work permit | NOT checked in `filterFull`; handled at collection stage or flagged with ⚠️ in report | Never silently passed or failed — always visible to the user |
+
+**Rule:** A technology or requirement found only in «Будет плюсом» / «Nice to have» / «Условия» / «О компании» belongs to the **desirable** category — it must never become a hard blocker. See `requirementsBlock()` below.
+
+---
+
 ## Filtering and ranking
 
 For each vacancy, apply filters in this order:
@@ -40,23 +56,38 @@ window.W = s => new RegExp('(^|[^а-яёa-z0-9])(?:' + s + ')([^а-яёa-z0-9]|$
 const esc = k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const wordRe = k => new RegExp('(^|[^а-яёa-z0-9])' + esc(k) + '([^а-яёa-z0-9]|$)', 'i');
 
-// Keep only the blocks that count as requirements/duties; no headings found => whole text.
+// Keep only the blocks that count as requirements/duties.
+// No headings found => whole text (safe default: block if unknown structure).
+// Headings found but none is a requirements heading => empty string (safe default: do NOT block
+// on conditions/nice-to-have/company-info only — a tech blocker in those sections is not a hard stop).
 window.requirementsBlock = (desc) => {
   const text = (desc || '').replace(/\r/g, '');
   const head = /^\s*(требовани[яй]|ожидани[яй]|обязанности|задачи|чем\s+предстоит\s+заниматься|что\s+нужно\s+делать|requirements|responsibilities|you\s+will|what\s+you.ll\s+do|будет\s+плюсом|желательно|nice\s+to\s+have|условия|мы\s+предлагаем|о\s+компании|бонусы)[^\n]{0,40}:?\s*$/gim;
   const marks = [...text.matchAll(head)].map(m => ({ i: m.index, name: m[1].toLowerCase() }));
-  if (!marks.length) return text;
+  if (!marks.length) return text;   // no structure => whole text (unknown, treat as requirements)
   const counts = /^(требовани|ожидани|обязанност|задачи|чем|что\s+нужно|requirements|responsibilities|you|what)/;
   let out = '';
   marks.forEach((m, k) => { if (counts.test(m.name)) out += text.slice(m.i, marks[k + 1] ? marks[k + 1].i : text.length) + '\n'; });
-  return out.trim() ? out : text;   // headings exist but none counts => do not hide anything
+  return out.trim() || '';   // structure found but no requirements sections => empty (do not block on nice-to-have/conditions)
 };
 
+// filterFull — the single filter entry point.
+// Returns:
+//   { pass: false, reason: string }                       — blocked vacancy (first triggered rule)
+//   { pass: true,  checks: string[] }                     — passed vacancy (list of checks that ran)
+//
+// Criteria categories (see section «Profile criteria categories» above):
+//   Pass 1 — absolute exclusions (always block, title only)
+//   Pass 2 — mandatory role condition (must match, title only)
+//   Pass 3 — personal hard filters (block on full text / requirements block)
+//   Unknown conditions (salary, work format, English level) are NOT checked here;
+//     they are handled at collection stage or flagged separately — never implicit pass or fail.
 window.filterFull = (name, desc, vac, profile) => {
   if (vac && vac.employment?.id === 'probation') return { pass: false, reason: 'probation-hh' };
 
   const titleOnly = (name || '').replace(/\s+/g, ' ').trim();
   const full = (titleOnly + ' ' + (desc || '')).replace(/\s+/g, ' ');
+  const checks = [];   // audit trail of passed checks (for 2.4 result detail)
 
   // Pass 1: title-only hard stops (checked before keyword match so they fire even on
   // non-keyword titles like «Стажёр-аналитик», «QA аналитик», «Trainee Analyst»)
@@ -65,31 +96,40 @@ window.filterFull = (name, desc, vac, profile) => {
     if (W('junior|intern|trainee|apprentice').test(titleOnly)) return { pass: false, reason: 'junior' };
     if (/младший\s+аналитик/i.test(titleOnly)) return { pass: false, reason: 'junior' };
   }
+  checks.push('experience-level');
   for (const r of (profile.role_exclusions || [])) if (wordRe(r).test(titleOnly)) return { pass: false, reason: 'role-excluded:' + r };
+  checks.push('role-exclusions');
 
   // Pass 2: role match (keyword must appear in title)
   const roles = (profile.keywords || []).concat(profile.job_title ? [profile.job_title] : []).map(esc).join('|');
   if (roles && !new RegExp(roles, 'i').test(titleOnly)) return { pass: false, reason: 'role-mismatch' };
+  checks.push('role-match');
 
   // Pass 3: personal filters
   if ((profile.geo_exclusions || []).some(g => /^ru-only$/i.test(g)) &&
       /удалённо\s+по\s+Росси|удаленно\s+по\s+Росси|удалённо\s+по\s+РФ|удаленно\s+по\s+РФ|на\s+территории\s+РФ|на\s+территории\s+России|работ[а-яё]*\s+в\s+РФ|только\s+в\s+РФ|только\s+в\s+России|резидент[а-яё]*\s+РФ|только\s+для\s+граждан\s+РФ|только\s+граждан[а-яё]*\s+РФ/i.test(full))
     return { pass: false, reason: 'RU-only' };
+  checks.push('geo-exclusions');
 
   const globalB = profile.user_blockers_global || profile.user_blockers || [];
   for (const b of globalB) if (wordRe(b).test(full)) return { pass: false, reason: 'blocker-global:' + b };
+  checks.push('blockers-global');
 
   const req = requirementsBlock(desc);
-  const reqFull = titleOnly + ' ' + req;
+  // req === '' means: headings were found but all are non-requirements sections (nice-to-have /
+  // conditions / about-company). Tech blockers do NOT apply — the technology appears only as
+  // optional or contextual, not as a hard requirement.
+  const reqFull = titleOnly + (req ? ' ' + req : '');
   for (const b of (profile.user_blockers_tech || [])) if (wordRe(b).test(reqFull)) return { pass: false, reason: 'blocker-tech:' + b };
+  checks.push('blockers-tech');
 
-  return { pass: true };
+  return { pass: true, checks };
 };
 ```
 
 Initialise `filterFull` once at the top of each browser session, before the apply loop. The same function serves hh.ru and every other platform: pass title, description text, vacancy object and profile.
 
-**False positives (resolved rule).** A technology blocker that appears only in a block that does not count (nice-to-have, conditions, about the company) does not block the vacancy. A global blocker (industry, employer, geo) always blocks, wherever it appears. Doubtful cases go to the manual-review table; they are never auto-applied.
+**False positives (resolved rule).** A technology blocker that appears only in a block that does not count (nice-to-have, conditions, about the company) does not block the vacancy — `requirementsBlock()` returns an empty string in this case, so no tech blocker fires. A global blocker (industry, employer, geo) always blocks, wherever it appears. Doubtful cases (a term in an ambiguous position, e.g. a company description mentioning a tool as part of their product) go to the manual-review table; they are never auto-applied.
 
 #### Confirmed bugs and fixes
 
@@ -100,6 +140,13 @@ Initialise `filterFull` once at the top of each browser session, before the appl
 **Confirmed bug #2 (November 2026):** Applied to ПИК vacancy with «удалённая работа на территории РФ» in description.
 **Root cause:** RU-only regex was incomplete, missed softer phrasings.
 **Fix:** Expanded RU-only regex to cover all geographic-restriction variants (see above).
+
+**Confirmed bugs #3–5 (November 2026, v2.1):** Three filter ordering bugs — intern/junior checks ran after keyword match, `role_exclusions` unreachable on non-keyword titles, RU-only regex missed «резидентов».
+**Fix:** Restructured `filterFull` into Pass 1 / Pass 2 / Pass 3 order; expanded RU-only regex.
+
+**Confirmed bug #6 (November 2026, v2.2 — Stage 2):** Tech blocker fired on a technology mentioned only in «Будет плюсом» or «Условия».
+**Root cause:** `requirementsBlock()` returned the whole text when structured headings existed but none were requirements-type. The fallback `return out.trim() ? out : text` treated «headings found, no requirements» the same as «no headings at all».
+**Fix:** Changed fallback to `return out.trim() || ''`. When headings exist but none are requirements, `requirementsBlock()` returns an empty string — tech blockers have nothing to match against and do not fire. Vacancies where the technology appears only as optional are no longer rejected.
 
 After filtering — rank by relevance:
 - Key skills match from resume
