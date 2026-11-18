@@ -16,9 +16,10 @@
 [Краткое summary: первая строка — «N авто-откликов, N TG-сообщений, N вакансий требуют ручного отклика» (при необходимости с «отправлено без участия пользователя», «поиск новых платформ: пропущен, следующий [дата]»). Ниже — маркированный список «Источники»: по одному пункту на каждый обязательный источник в виде «[Источник] — проверен (N страниц, M проверено, K прошли фильтр) / недоступен (причина) / не поддерживает нужный поиск (что отсутствует) / не проверен (причина)». Источники со статусом «недоступен» и «не проверен» дополнительно попадают в «Что сделать вручную» с точным действием.]
 
 ## Авто-отклики [N]
-Таблица: Платформа | Вакансия | Компания | Статус
+Таблица: Платформа | Вакансия | Компания | Статус | Свежесть
 - Вакансия — кликабельная ссылка: [Название вакансии](https://url)
 - Статус — что сделано: «Отклик», «Отклик + сопроводительное письмо», «Отклик через форму» и т.д.
+- Свежесть — результат `checkFreshness()`: «актуальна» / «⚠️ неизвестно» (дата не определена); статусы «вероятно устарела» и «закрыта» в этот раздел не попадают (вакансия заблокирована на этапе фильтрации).
 (Секция включает ВСЕ платформы вместе: hh.ru, getmatch, geekjob, hirify, и др. — не разбивать по платформам)
 
 ## TG-сообщения отправлены [N]
@@ -26,8 +27,9 @@
 - Должность — кликабельная ссылка на вакансию или пост в канале
 
 ## Требуют ручного отклика [N]
-Таблица: Платформа | Компания | Должность | Как откликнуться
+Таблица: Платформа | Компания | Должность | Как откликнуться | Свежесть
 - Должность — кликабельная ссылка на вакансию
+- Свежесть — результат `checkFreshness()`: «актуальна» / «⚠️ неизвестно» (дата не определена)
 - Если пользователь пометил строку в последней колонке («просмотрено, больше не присылать» или любым ответом), вакансия записывается в профиль (`manual_reviewed`) и больше никогда не попадает в этот блок
 
 ## Заблокированы / Plus [N]
@@ -56,7 +58,7 @@
 3. **Hirify short URL format** — use `https://hirify.me/jobs/[ID]` (no slug). These return HTTP 200.
 4. **External career sites** — verify by navigating in browser (not `fetch()` — CORS will block). If unavailable, remove link.
 5. **Document title** — in the user's chosen language, with the date. Russian users: «Отчёт по поиску работы — 9 ноября 2026».
-6. **Link verification** — hh.ru and Hirify links: verify via fetch(url, {method:'HEAD'}) in browser console. External sites: navigate directly in a browser tab.
+6. **Link verification** — hh.ru and Hirify links: verify via fetch(url, {method:'HEAD'}) in browser console. External links: navigate directly in a browser tab.
 7. **New platforms auto-save** — after the report is finalized, add every platform from «Список новых платформ этого запуска» to the known platforms list in `/areas/job-hunter-profile.md` automatically.
 8. **Format is immutable** — do NOT rearrange sections, rename columns, merge sections, or add/remove sections without explicit user instruction. The format above is the contract.
 9. **New platforms section holds only new platforms.** Results for platforms already in the profile go to «Авто-отклики» (what was sent), «Требуют ручного отклика» (what needs the user), «Заблокированы / Plus» (what was filtered out) and the per-source list in the summary. They never appear in «Новые платформы — результаты поиска» or «Список новых платформ этого запуска».
