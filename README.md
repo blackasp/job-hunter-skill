@@ -38,6 +38,10 @@ Works for any profession, any country, any language.
 - **Technology blockers read in the right place** — only the «Requirements» and «Responsibilities» blocks; «nice to have» does not block
 - **Run journal** — start/end of every step, pages and vacancies per platform, blocks; decides when the next full discovery is due
 - **Cold start detection** — if last run was 14+ days ago, re-checks platform auth and channel activity before searching
+- **Deduplication** *(v2.1)* — fingerprint-based dedup runs before filtering; confident (≥70) and probable (50–69) duplicates are merged, not discarded; `seen_in[]` accumulates all sources
+- **Freshness validation** *(v2.1)* — `checkFreshness()` gives every vacancy a status (актуальна / вероятно устарела / закрыта / неизвестно) using strict date-field separation; `discovered_at` is never used as publication date
+- **Freshness column in report** *(v2.1)* — both auto-apply and manual tables now show freshness status per vacancy
+- **Hardened filter with 67 tests** *(v2.1)* — `filterFull()` and `requirementsBlock()` bugs fixed (BUG-A/B/C/6); 67 tests cover filter, dedup, and freshness; zero regressions
 
 ---
 
@@ -250,7 +254,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full history of changes.
 - **Устойчивость к сетевым ошибкам** — try/catch на все fetch-запросы; одна ошибка не прерывает весь запуск
 - **Имя из API** — всегда из `api.hh.ru/me`, никогда не угадывается
 - **Все приглашения** — показываются без фильтра по дате
-- **Лимит откликов** — по умолчанию нет; необязательный дневной лимит можно задать одной фразой одной фразой
+- **Лимит откликов** — по умолчанию нет; необязательный дневной лимит можно задать одной фразой
 - **Объяснение нулевого результата** — если 0 вакансий прошло фильтры, отчёт содержит разбивку по каждому фильтру и предложение ослабить главный
 - **Все страницы выдачи, остановка по свежести** — читаются все страницы площадки, от новых к старым, пока вся страница не окажется старше порога свежести
 - **Только поиск на площадках без входа** — новые площадки ищутся и попадают в отчёт («Требуется регистрация»), но скилл не откликается и не регистрируется
@@ -259,6 +263,10 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full history of changes.
 - **Блокеры-технологии ищутся в нужном месте** — только в блоках «Требования» и «Обязанности»; «будет плюсом» не блокирует
 - **Журнал запусков** — время каждого шага, страницы и вакансии по площадкам, блокировки; по нему определяется срок следующей полной проверки
 - **Определение холодного старта** — если последний запуск был 14+ дней назад, сначала проверяет авторизацию на платформах и активность каналов
+- **Дедупликация** *(v2.1)* — поиск дублей по фингерпринту перед фильтрацией; confident (≥70) и probable (50–69) дубли объединяются, не выбрасываются; `seen_in[]` накапливает все источники
+- **Проверка свежести** *(v2.1)* — `checkFreshness()` присваивает каждой вакансии статус (актуальна / вероятно устарела / закрыта / неизвестно) со строгим разделением полей дат; `discovered_at` никогда не используется как дата публикации
+- **Колонка «Свежесть» в отчёте** *(v2.1)* — обе таблицы (авто-отклики и ручные) теперь показывают статус свежести по каждой вакансии
+- **Укреплённый фильтр, 67 тестов** *(v2.1)* — исправлены баги BUG-A/B/C/6 в `filterFull()` и `requirementsBlock()`; 67 тестов покрывают фильтр, дедупликацию и свежесть; регрессий нет
 
 ---
 
@@ -273,7 +281,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full history of changes.
 ### Рекомендуемые модели
 
 | Уровень | Модель | Комментарий |
-|---------|--------|-------------|
+|---------|--------|--------------|
 | **Минимум** | Claude Haiku 5.5 | Базовый поиск и фильтрация пройдут. Кавер-леттеры получатся шаблонными. Сложные проверки (капча, DOM-парсинг, маппинги InitialState) могут теряться. |
 | **Оптимум** | **Claude Sonnet 5.5** | Уверенно выполняет все фазы: поиск, фильтрацию, DOM-парсинг, кавер-леттеры под вакансию, отчёт. Лучшее соотношение качества и скорости. **Рекомендуется для ежедневных запусков.** |
 | **Максимум** | Claude Opus 5.5 / Fable 5.1 | Лучше справляется с нестандартными ситуациями (сломанный DOM, неожиданная структура ответа), пишет более точные кавер-леттеры. Имеет смысл для первого онбординга или если Sonnet стабильно пропускает вакансии. |

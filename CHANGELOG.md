@@ -4,6 +4,25 @@ All notable changes to Job Hunter skill are documented here.
 
 ---
 
+## [2.1] — 2026-11-18
+
+### Added
+- **Deduplication engine** (`references/dedup.md`): `dedupVacancies(raw, history)` removes duplicates before filtering using fingerprinting. `vacancyFingerprint(a, b)` returns `{score, signals[]}` — ≥70 = confident duplicate, 50–69 = probable. `mergeVacancies()` accumulates `seen_in[]` without overwriting the canonical entry. Helper functions: `normText`, `normCompany`, `normUrl`, `trigramSim`.
+- **Freshness validation** (`references/freshness.md`): `checkFreshness(vacancy, profile)` returns one of four statuses — `актуальна` / `вероятно устарела` / `закрыта` / `неизвестно`. Strict separation of four date fields: `published_at`, `updated_at`, `discovered_at`, `verified_at`; `discovered_at` is **never** used as a publication date. Threshold: `max_vacancy_age_days` from profile (default 30).
+- **`Свежесть` column** in both report tables: «Авто-отклики» (`Платформа | Вакансия | Компания | Статус | Свежесть`) and «Требуют ручного отклика» (`Платформа | Компания | Должность | Как откликнуться | Свежесть`).
+- **67 tests** in `references/tests.js` (up from 40): filter T-01–T-52, dedup T-53–T-59, freshness T-60–T-67. Zero regressions. Regression history table added to `references/tests-baseline.md`.
+
+### Fixed
+- **BUG-A/B/C** in `filterFull()` (`references/filters.md`): three-pass canonical filter hardened; edge cases in role matching, remote-RF detection, and blocker matching corrected.
+- **BUG-6** in `requirementsBlock()`: previously returned the full vacancy text when only non-requirements headings (nice-to-have, conditions, about-company) were present; now correctly returns `''` in that case. 12 new tests (T-41–T-52) cover these boundary cases.
+
+### Changed
+- `modes/orchestrator.md` Step 2: now explicitly loads `references/filters.md` + `references/dedup.md` + `references/freshness.md` and specifies pipeline call order: `dedupVacancies(raw_vacancies, history)` → `checkFreshness(vacancy, profile)` → `filterFull(name, desc, vac, profile)`.
+- `references/filters.md`: universal filter rule #2 added for freshness gate.
+- `references/tests-baseline.md`: expanded from 40 to 67 tests; regression history table added.
+
+---
+
 ## [1.3.3] — 2026-11-14
 
 ### Changed
