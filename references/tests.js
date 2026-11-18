@@ -47,6 +47,93 @@ window.filterFull = (name, desc, vac, profile) => {
   return { pass: true, checks };
 };
 
+// ─── Paste dedup implementation verbatim from references/dedup.md ───────────
+window.normText = s => (s || '').toLowerCase().replace(/[«»""''\-–—\/\\|]/g, ' ').replace(/\s+/g, ' ').trim();
+window.normCompany = s => window.normText(s)
+  .replace(/\b(ооо|оао|зао|пао|ао|нко|ип|inc\.?|ltd\.?|llc\.?|gmbh|s\.?a\.?|b\.?v\.?|corp\.?)\b/gi, '')
+  .replace(/\s+/g, ' ').trim();
+window.normUrl = u => {
+  if (!u) return '';
+  try {
+    const p = new URL(u.startsWith('http') ? u : 'https://' + u);
+    return (p.hostname.replace(/^www\./, '') + p.pathname).replace(/\/$/, '').toLowerCase();
+  } catch { return (u || '').toLowerCase().trim(); }
+};
+window.trigramSim = (a, b) => {
+  if (!a || !b) return 0;
+  const tri = s => { const t = new Set(); for (let i = 0; i < s.length - 2; i++) t.add(s.slice(i, i + 3)); return t; };
+  const ta = tri(a), tb = tri(b);
+  let inter = 0;
+  ta.forEach(g => { if (tb.has(g)) inter++; });
+  return (2 * inter) / (ta.size + tb.size || 1);
+};
+window.vacancyFingerprint = (a, b) => {
+  const signals = [];
+  let score = 0;
+  if (a.id && b.id && a.id === b.id) return { score: 100, signals: ['exact-id'] };
+  const normA_url = window.normUrl(a.url);
+  const normB_url = window.normUrl(b.url);
+  if (normA_url && normB_url && normA_url === normB_url) {
+    signals.push('exact-url'); score += 90;
+  } else if (normA_url && normB_url) {
+    const canon = u => u.split('?')[0];
+    if (canon(normA_url) === canon(normB_url)) { signals.push('canonical-url'); score += 80; }
+  }
+  const compA = window.normCompany(a.company), compB = window.normCompany(b.company);
+  const titleA = window.normText(a.title), titleB = window.normText(b.title);
+  if (compA && compB && compA === compB) {
+    if (titleA && titleB && titleA === titleB) { signals.push('exact-company-title'); score += 60; }
+    else if (titleA && titleB) {
+      const sim = window.trigramSim(titleA, titleB);
+      if (sim >= 0.85) { signals.push('company-match+title-sim:' + sim.toFixed(2)); score += 50; }
+    }
+  }
+  if (score === 0) return { score: 0, signals: ['distinct'] };
+  if (a.location && b.location) {
+    const locA = window.normText(a.location), locB = window.normText(b.location);
+    if (locA && locB && locA === locB) { signals.push('location-match'); score += 10; }
+  }
+  if (a.posted_date && b.posted_date) {
+    const diff = Math.abs(new Date(a.posted_date) - new Date(b.posted_date)) / 86400000;
+    if (diff <= 7) { signals.push('date-within-7d'); score += 5; }
+  }
+  if (a.salary_min != null && b.salary_min != null && a.salary_min > 0 && b.salary_min > 0) {
+    const ratio = Math.abs(a.salary_min - b.salary_min) / Math.max(a.salary_min, b.salary_min);
+    if (ratio <= 0.1) { signals.push('salary-match'); score += 5; }
+  }
+  return { score, signals };
+};
+window.mergeVacancies = (canonical, duplicate) => {
+  const seen_in = [...(canonical.seen_in || [{ platform: canonical.platform, url: canonical.url, id: canonical.id, posted_date: canonical.posted_date, source_channel: canonical.source_channel || null, tg_message_link: canonical.tg_message_link || null }])];
+  seen_in.push({ platform: duplicate.platform, url: duplicate.url, id: duplicate.id, posted_date: duplicate.posted_date, source_channel: duplicate.source_channel || null, tg_message_link: duplicate.tg_message_link || null });
+  const dates = seen_in.map(s => s.posted_date).filter(Boolean).sort();
+  return { ...canonical, seen_in, posted_date: dates[0] || canonical.posted_date, dedup_confidence: 'confident', dedup_flag: null };
+};
+window.dedupVacancies = (raw, history) => {
+  const result = [], usedIdx = new Set();
+  for (let i = 0; i < raw.length; i++) {
+    if (usedIdx.has(i)) continue;
+    let canonical = { ...raw[i] };
+    if (!canonical.seen_in) canonical.seen_in = [{ platform: canonical.platform, url: canonical.url, id: canonical.id, posted_date: canonical.posted_date, source_channel: canonical.source_channel || null, tg_message_link: canonical.tg_message_link || null }];
+    for (let j = i + 1; j < raw.length; j++) {
+      if (usedIdx.has(j)) continue;
+      const fp = window.vacancyFingerprint(canonical, raw[j]);
+      if (fp.score >= 70) { canonical = window.mergeVacancies(canonical, raw[j]); usedIdx.add(j); }
+      else if (fp.score >= 50) {
+        canonical = window.mergeVacancies(canonical, raw[j]);
+        canonical.dedup_confidence = 'probable'; canonical.dedup_flag = 'probable'; canonical.dedup_signals = fp.signals;
+        usedIdx.add(j);
+      }
+    }
+    for (const h of (history || [])) {
+      const fp = window.vacancyFingerprint(canonical, h);
+      if (fp.score >= 70) { canonical.seen_before = true; canonical.seen_before_id = h.id; break; }
+    }
+    result.push(canonical);
+  }
+  return result;
+};
+
 // ─── Mari's real profile (from /areas/job-hunter-profile.md) ────────────────
 const PROFILE = {
   job_title: "системный аналитик",
@@ -633,14 +720,129 @@ Bitrix experience is a plus.`,
 
 ];
 
+// ─── DEDUP TEST CASES (T-53–T-59) ────────────────────────────────────────────
+// These test dedupVacancies() and vacancyFingerprint() directly.
+// Format: { id, scenario, fn, expected (bool or value), notes }
+
+function makeRaw(overrides = {}) {
+  return {
+    id: overrides.id || 'hh_100',
+    platform: overrides.platform || 'hh.ru',
+    title: overrides.title || 'Системный аналитик',
+    company: overrides.company || 'Acme Ltd',
+    url: overrides.url || 'https://hh.ru/vacancy/100',
+    location: overrides.location || 'Удалённо',
+    posted_date: overrides.posted_date || '2026-11-18T10:00:00Z',
+    salary_min: overrides.salary_min ?? null,
+    source_channel: overrides.source_channel || null,
+    tg_message_link: overrides.tg_message_link || null,
+    ...overrides
+  };
+}
+
+const dedupTests = [];
+let dPassed = 0, dFailed = 0;
+
+function runDedup(id, scenario, fn, notes) {
+  let ok = false, detail = '';
+  try { const r = fn(); ok = r.ok !== false; detail = r.detail || ''; }
+  catch (e) { ok = false; detail = e.message; }
+  dedupTests.push({ id, scenario, ok, notes: notes + (detail ? ' | ' + detail : '') });
+}
+
+// T-53: Same vacancy on two platforms — confident merge
+runDedup('T-53', 'dedup-two-platforms', () => {
+  const a = makeRaw({ id: 'hh_200', platform: 'hh.ru', url: 'https://hh.ru/vacancy/200', title: 'Системный аналитик', company: 'Яндекс', location: 'Удалённо', posted_date: '2026-11-18T10:00:00Z' });
+  const b = makeRaw({ id: 'gm_200', platform: 'getmatch', url: 'https://getmatch.ru/vacancies/200', title: 'Системный аналитик', company: 'Яндекс', location: 'Удалённо', posted_date: '2026-11-18T11:00:00Z' });
+  const result = window.dedupVacancies([a, b], []);
+  if (result.length !== 1) return { ok: false, detail: 'expected 1 merged, got ' + result.length };
+  if (!result[0].seen_in || result[0].seen_in.length !== 2) return { ok: false, detail: 'seen_in should have 2 entries, got ' + (result[0].seen_in || []).length };
+  if (result[0].dedup_confidence !== 'confident') return { ok: false, detail: 'confidence should be confident, got ' + result[0].dedup_confidence };
+  return { ok: true };
+}, 'T-53: same title+company on hh.ru+getmatch — должны слиться в одну запись с seen_in[2]');
+
+// T-54: Same vacancy with different URLs (tracking params) — confident merge
+runDedup('T-54', 'dedup-canonical-url', () => {
+  const a = makeRaw({ id: 'hh_300', url: 'https://hh.ru/vacancy/300' });
+  const b = makeRaw({ id: 'hh_300b', url: 'https://hh.ru/vacancy/300?from=recommend&hhtmFrom=main' });
+  const fp = window.vacancyFingerprint(a, b);
+  if (fp.score < 80) return { ok: false, detail: 'score=' + fp.score + ', expected >=80 (canonical URL match)' };
+  return { ok: true };
+}, 'T-54: одинаковый URL без query params — confident (canonical-url signal)');
+
+// T-55: Same vacancy re-discovered in next run — seen_before: true
+runDedup('T-55', 'dedup-seen-before', () => {
+  const vac = makeRaw({ id: 'hh_400', url: 'https://hh.ru/vacancy/400', title: 'Системный аналитик', company: 'Mail.ru' });
+  const history = [{ id: 'hh_400', url: 'https://hh.ru/vacancy/400', company: 'Mail.ru', title: 'Системный аналитик' }];
+  const result = window.dedupVacancies([vac], history);
+  if (!result[0].seen_before) return { ok: false, detail: 'seen_before should be true' };
+  if (result[0].seen_before_id !== 'hh_400') return { ok: false, detail: 'seen_before_id mismatch' };
+  if (result.length !== 1) return { ok: false, detail: 'vacancy should NOT be removed, length=' + result.length };
+  return { ok: true };
+}, 'T-55: вакансия уже была в истории — seen_before=true, но НЕ удаляется из результатов');
+
+// T-56: Two similar vacancies from same company — probable duplicate
+runDedup('T-56', 'dedup-probable-same-company', () => {
+  const a = makeRaw({ id: 'hh_500', title: 'Системный аналитик (Финтех)', company: 'Тинькофф', url: 'https://hh.ru/vacancy/500', location: 'Москва' });
+  const b = makeRaw({ id: 'hh_501', title: 'Системный аналитик в команду Финтех', company: 'Тинькофф', url: 'https://hh.ru/vacancy/501', location: 'Москва' });
+  const result = window.dedupVacancies([a, b], []);
+  // Both should be in result — either as merged probable or as distinct
+  // The key: if merged, dedup_flag must be 'probable'; if distinct, length must be 2
+  if (result.length === 1) {
+    if (result[0].dedup_flag !== 'probable') return { ok: false, detail: 'merged but dedup_flag should be probable, got ' + result[0].dedup_flag };
+  } else if (result.length !== 2) {
+    return { ok: false, detail: 'expected 1 (probable) or 2 (distinct), got ' + result.length };
+  }
+  return { ok: true };
+}, 'T-56: два похожих заголовка в одной компании — probable duplicate или distinct (не confident)');
+
+// T-57: Same title in different cities — distinct vacancies
+runDedup('T-57', 'dedup-different-cities', () => {
+  const a = makeRaw({ id: 'hh_600', title: 'Системный аналитик', company: 'Сбер', url: 'https://hh.ru/vacancy/600', location: 'Москва', posted_date: '2026-11-18T10:00:00Z' });
+  const b = makeRaw({ id: 'hh_601', title: 'Системный аналитик', company: 'Сбер', url: 'https://hh.ru/vacancy/601', location: 'Санкт-Петербург', posted_date: '2026-11-18T10:00:00Z' });
+  const fp = window.vacancyFingerprint(a, b);
+  // Different URLs, same company+title: score should be 60 (exact-company-title)
+  // Different location: NO location-match bonus
+  // Result: score = 60, falls in probable range (50-69)
+  if (fp.score >= 70) return { ok: false, detail: 'score=' + fp.score + ' should be <70 (different cities = not confident)' };
+  return { ok: true };
+}, 'T-57: одинаковое название в разных городах — не confident (score<80)');
+
+// T-58: Different vacancies with same title — distinct (different companies)
+runDedup('T-58', 'dedup-different-companies', () => {
+  const a = makeRaw({ id: 'hh_700', title: 'Системный аналитик', company: 'Газпром', url: 'https://hh.ru/vacancy/700' });
+  const b = makeRaw({ id: 'hh_701', title: 'Системный аналитик', company: 'Лукойл', url: 'https://hh.ru/vacancy/701' });
+  const fp = window.vacancyFingerprint(a, b);
+  if (fp.score >= 50) return { ok: false, detail: 'different companies should be distinct (score<50), got ' + fp.score };
+  const result = window.dedupVacancies([a, b], []);
+  if (result.length !== 2) return { ok: false, detail: 'different companies must stay separate, got ' + result.length };
+  return { ok: true };
+}, 'T-58: одинаковое название, разные компании — distinct, обе вакансии сохраняются');
+
+// T-59: Existing filterFull results not lost — dedup runs first, filter sees all deduped entries
+runDedup('T-59', 'dedup-no-data-loss', () => {
+  const vacancies = [
+    makeRaw({ id: 'hh_800', title: 'Системный аналитик', company: 'Yandex', url: 'https://hh.ru/vacancy/800' }),
+    makeRaw({ id: 'hh_801', title: 'Продуктовый аналитик', company: 'VK', url: 'https://hh.ru/vacancy/801' }),
+    makeRaw({ id: 'hh_802', title: 'Аналитик данных', company: 'Ozon', url: 'https://hh.ru/vacancy/802' }),
+  ];
+  const result = window.dedupVacancies(vacancies, []);
+  if (result.length !== 3) return { ok: false, detail: 'all 3 distinct vacancies must survive dedup, got ' + result.length };
+  // Every item must have seen_in
+  for (const v of result) {
+    if (!v.seen_in || v.seen_in.length < 1) return { ok: false, detail: 'seen_in missing on ' + v.id };
+  }
+  return { ok: true };
+}, 'T-59: 3 разные вакансии — все сохраняются после дедупликации, у каждой есть seen_in');
+
 // ─── Results output ──────────────────────────────────────────────────────────
 let passed = 0, failed = 0;
 const failures = [];
 const unexpected_passes = [];
 
 console.log('\n╔══════════════════════════════════════════════════════════════╗');
-console.log('║        JOB HUNTER filterFull() — v2.2 TEST RUN (Stage 2)    ║');
-console.log('║          BUG-6 fix: requirementsBlock fallback corrected     ║');
+console.log('║    JOB HUNTER filterFull() + dedup — v3.0 TEST RUN (Stage 3)║');
+console.log('║          Stage 3: dedupVacancies() / vacancyFingerprint()    ║');
 console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
 console.log(`${'ID'.padEnd(6)} ${'SCENARIO'.padEnd(32)} ${'EXP'.padEnd(5)} ${'GOT'.padEnd(5)} ${'REASON'.padEnd(30)} RESULT`);
@@ -690,11 +892,35 @@ for (const [g, s] of Object.entries(groups)) {
 }
 console.log('');
 
+// ─── Dedup tests results ──────────────────────────────────────────────────────
+console.log('\n╔══════════════════════════════════════════════════════════════╗');
+console.log('║          DEDUP TESTS (T-53–T-59) — Stage 3                  ║');
+console.log('╚══════════════════════════════════════════════════════════════╝\n');
+
+console.log(`${'ID'.padEnd(6)} ${'SCENARIO'.padEnd(32)} RESULT`);
+console.log('─'.repeat(60));
+for (const t of dedupTests) {
+  const mark = t.ok ? '✓' : '✗';
+  console.log(`${t.id.padEnd(6)} ${t.scenario.padEnd(32)} ${mark}  ${t.ok ? '' : t.notes}`);
+  if (t.ok) dPassed++; else { dFailed++; }
+}
+console.log('─'.repeat(60));
+console.log(`\nИТОГО (dedup): ${dedupTests.length} тестов | ✓ прошло: ${dPassed} | ✗ провалено: ${dFailed}\n`);
+
+if (dFailed > 0) {
+  console.log('══ ПРОВАЛЕНО (dedup) ═══════════════════════════════════════════');
+  for (const t of dedupTests) {
+    if (!t.ok) console.log(`\n${t.id} [${t.scenario}]\n  ${t.notes}`);
+  }
+  console.log('');
+}
+
 // ─── Infrastructure requirements ─────────────────────────────────────────────
-console.log('══ ТЕСТЫ, ТРЕБУЮЩИЕ ДОП. ИНФРАСТРУКТУРЫ ══════════════════════');
-console.log('  Все 40 тестов запускаются без внешних зависимостей (filterFull inline).');
-console.log('  Не требуют: hh.ru API, база дубликатов, сетевые вызовы.');
-console.log('  Возможное расширение: mock hh.ru ответов для тестирования Agent 1 (поиск).');
+console.log('══ ИНФРАСТРУКТУРА ═══════════════════════════════════════════');
+console.log('  T-01–T-52: filterFull() — без внешних зависимостей.');
+console.log('  T-53–T-59: dedupVacancies() / vacancyFingerprint() — без внешних зависимостей.');
+console.log('  Не требуют: hh.ru API, сетевые вызовы, база данных.');
 console.log('');
 
-process.exit(failed > 0 ? 1 : 0);
+const totalFailed = failed + dFailed;
+process.exit(totalFailed > 0 ? 1 : 0);
