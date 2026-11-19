@@ -23,7 +23,7 @@ In the run of 2026-11-11 only hh.ru was searched. The previous instructions said
 
 «Проверен» without executed search steps and numbers is not allowed.
 
-**Confirmed reasons (the only ones allowed).** A skip or stop must be backed by something visible in the session: an error message or HTTP status, a captcha or login page, a block (`blocked: true`, 429), a missing login, a tool absent from the session, a limit quoted from a tool result, or an explicit instruction from the user. «Время закончилось», «не хватило времени», «слишком долго», «контекст закончился», «лимит» without a quoted source are forbidden. The session has no time limit unless a tool or error says so; if a limit is suspected, find it from the available tools / the error text and report it as it is with the time of observation, otherwise carry on. A long search on one platform is not a reason.
+**Confirmed reasons (the only ones allowed).** A skip or stop must be backed by something visible in the session: an error message or HTTP status, a captcha or login page, a block (`blocked: true`, 429), a missing login, a tool absent from the session, a limit quoted from a tool result, or an explicit instruction from the user. «Время закончилось», «не хватило времени», «слишком долго», «контекст закончился», «limит» without a quoted source are forbidden. The session has no time limit unless a tool or error says so; if a limit is suspected, find it from the available tools / the error text and report it as it is with the time of observation, otherwise carry on. A long search on one platform is not a reason.
 
 **Run order rules (mandatory):**
 1. **Phase A first.** Threads is swept first (the fastest source, `modes/threads.md`), then the platforms. Sweep every mandatory source before deep work on any of them. In Phase A read only list/search pages (titles, companies, links, dates, salary shown in the list) within the freshness threshold and the pagination rules of Step 2a; do **not** read descriptions and do **not** apply yet.
@@ -80,7 +80,7 @@ For each platform in the saved list (priority order), one after another, without
 6. Add to shared pool
 7. Record per platform in its ledger row and for the report summary: status and «[Platform]: N страниц, M вакансий проверено, K прошли фильтр» (K is filled after Phase B).
 8. Platforms without a confirmed login for applying are still searched (search-only).
-9. Skip silently any vacancy listed in the profile's `manual_reviewed`.
+9. Skip silently any vacancy whose ID appears in the profile's `manual_reviewed`, `applied_ids`, `habr_applied_ids`, or any `{platform}_applied_ids` field (e.g. `geekjob_applied_ids`). These IDs have already been applied to and must never surface again as candidates, even when the browser is offline and live profile checks are unavailable.
 
 **If browser hits a login page** — do NOT abort the run. Mark platform as "needs re-auth", continue with others, note in report.
 
@@ -210,6 +210,7 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 - [ ] Telegram vacancies: every item has `tg_message_link` populated — items without it are dropped from the array
 - [ ] Browser fallback was used for any source that returned ERR_CONNECTION_RESET, 403, or timeout on WebFetch
 - [ ] `raw_vacancies[]` has been written to in-session storage before returning to Orchestrator
+- [ ] Vacancies were filtered against `manual_reviewed`, `applied_ids`, `habr_applied_ids`, and all `{platform}_applied_ids` fields before being added to `raw_vacancies[]`
 
 If any check fails → fix it before handing off. If a source is genuinely unreachable after all fallbacks, mark it «недоступен» with evidence and continue.
 
