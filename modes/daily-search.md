@@ -6,7 +6,7 @@ Order of the whole run: Step 0 journal + source ledger → 0a salary threshold �
 
 ### Why this order (root cause of the skipped sources, 2026-11-11)
 
-In the run of 2026-11-11 only hh.ru was searched. The previous instructions said «for each platform in the list: collect ALL pages», put hh.ru first, and let filtering, description reading and applying of that platform's results run before the next platform was touched. One platform with hundreds of vacancies (361 candidates, one page request every 4–8 s for page browsing and for every description, then applications with fixed pacing) consumed the whole run; nothing forced the other sources to be visited first, nothing recorded a per-source status, and the journal was written only at the end, so skipped sources left no trace and the run was explained with an unconfirmed «not enough time». The rules below remove each of these causes.
+In the run of 2026-11-11 only hh.ru was searched. The previous instructions said «for each platform in the list: collect ALL pages», put hh.ru first, and let filtering, description reading and applying of that platform's results run before the next platform was touched. One platform with hundreds of vacancies (361 candidates, one page request every 4–8 s for page browsing and for every description, then applications with fixed pacing) consumed the whole run; nothing forced the other sources to be visited first, nothing recorded a per-source status, and the journal was written only at the end, so skipped sources left no trace and the run was explained with an unconfirmed «не хватило времени». The rules below remove each of these causes.
 
 ### Mandatory sources and the source ledger (every run)
 
@@ -80,7 +80,7 @@ For each platform in the saved list (priority order), one after another, without
 6. Add to shared pool
 7. Record per platform in its ledger row and for the report summary: status and «[Platform]: N страниц, M вакансий проверено, K прошли фильтр» (K is filled after Phase B).
 8. Platforms without a confirmed login for applying are still searched (search-only).
-9. Skip silently any vacancy listed in the profile's `manual_reviewed`.
+9. Skip silently any vacancy whose ID appears in the profile's `manual_reviewed`, `applied_ids`, `habr_applied_ids`, or any `{platform}_applied_ids` field (e.g. `geekjob_applied_ids`). These IDs have already been applied to and must never surface again as candidates, even when the browser is offline and live profile checks are unavailable.
 
 **If browser hits a login page** — do NOT abort the run. Mark platform as "needs re-auth", continue with others, note in report.
 
@@ -120,6 +120,13 @@ Report new platforms found in a dedicated section: **"🆕 Новые платф
 **Registered vs not registered:** a platform counts as registered only if the profile marks a confirmed login for it (see `modes/onboarding.md`, platform onboarding). Everything else is search-only (Universal rule 9). The user registers manually; after that she tells the skill, the platform is marked as registered and from the next run vacancies there are handled like on any other platform, including auto-apply.
 
 **hh.ru-specific checks (apply when searching hh.ru):**
+
+**HH-User-Agent (mandatory).** All requests to hh.ru API must include the custom `HH-User-Agent` header. Without it, hh.ru returns «blacklisted user-agent» (HTTP 403) — this is a **standing policy**, not a new or temporary issue. Build the header from the profile:
+```js
+const hhUA = `JobHunterSkill/1.0 (${profile.hh_contact_email || profile.email})`;
+// Add to every fetch(): headers: { 'HH-User-Agent': hhUA }
+```
+Store the contact email in `profile.hh_contact_email`. See `references/hh-api-setup.md` for the full setup guide, dev.hh.ru registration instructions, and the form texts.
 
 **Data structure:** hh.ru page state (`HH-Lux-InitialState`) uses different field names than the REST API. Always handle both:
 - Vacancy ID: use `v.vacancyId` (InitialState), not `v.id`
@@ -209,6 +216,8 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 - [ ] Every `raw_vacancies[]` item has all required fields: `id`, `platform`, `title`, `company`, `url`, `posted_date`, `work_format`, `tg_message_link` (if TG)
 - [ ] Telegram vacancies: every item has `tg_message_link` populated — items without it are dropped from the array
 - [ ] Browser fallback was used for any source that returned ERR_CONNECTION_RESET, 403, or timeout on WebFetch
+- [ ] All hh.ru API requests in this run included the `HH-User-Agent` header with the value from `profile.hh_contact_email` (see `references/hh-api-setup.md`)
+- [ ] Vacancies were filtered against `manual_reviewed`, `applied_ids`, `habr_applied_ids`, and all `{platform}_applied_ids` fields before being added to `raw_vacancies[]`
 - [ ] `raw_vacancies[]` has been written to in-session storage before returning to Orchestrator
 
 If any check fails → fix it before handing off. If a source is genuinely unreachable after all fallbacks, mark it «недоступен» with evidence and continue.

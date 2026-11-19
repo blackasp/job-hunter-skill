@@ -116,10 +116,40 @@ for (let i = startIdx; i < vacancies.length; i++) {
       company: vac.company?.name || vac.company?.visibleName || vac.employer?.name,
       url: vac.url || `https://hh.ru/vacancy/${vacancyId}`
     });
+
+    // Persist platform-specific applied ID to profile immediately (non-hh platforms).
+    // This ensures that if the browser is offline on a future run, dedup.md's safety
+    // net can still suppress already-applied vacancies even without a live profile check.
+    const host = vac.host || 'hh.ru';
+    if (!host.includes('hh.ru')) {
+      // Derive field name: career.habr.com → habr_applied_ids, geekjob.ru → geekjob_applied_ids
+      const platformSlug = host
+        .replace(/^(career\.|www\.)/, '')
+        .replace(/\.(ru|com|me|io)$/, '');
+      const fieldKey = `${platformSlug}_applied_ids`;
+      // Append to profile in persistent memory using memory_append.
+      // The ID is appended as a YAML list item under the field key.
+      await memory_str_replace_or_append(profile._memory_path, fieldKey, String(vacancyId));
+      // Pseudocode for the actual call:
+      //   If fieldKey line exists in profile → append the ID to its list
+      //   If fieldKey line does not exist → add: `fieldKey: [vacancyId]`
+      // Use the memory MCP tools available in the session (memory_append / memory_str_replace).
+    }
   } else if (result.status === 429) { break; }
   window.__resumeIdx = i + 1;
 }
 ```
+
+**§ Persist applied IDs (mandatory for all non-hh.ru platforms)**
+
+After every successful application (`result.status === 200`) on a platform other than hh.ru, write the vacancy ID to the profile's `{platform}_applied_ids` field in persistent memory **immediately** — not at the end of the run. This prevents the same vacancy from surfacing again on future runs even when the browser is offline and a live profile-page check is impossible.
+
+Mechanics:
+1. Derive `fieldKey` from the host: strip `career.`, `www.` prefix and `.ru`/`.com`/`.me`/`.io` suffix. Examples: `career.habr.com` → `habr_applied_ids`; `geekjob.ru` → `geekjob_applied_ids`.
+2. Read the current profile memory file. Find the `fieldKey:` line.
+3. If the line exists (e.g. `habr_applied_ids: [1000140395, 1000169202]`): append the new ID to the list with `memory_str_replace`.
+4. If the line does not exist: add it with `memory_append` as `\nhabr_applied_ids: [vacancyId]`.
+5. If the memory write fails (timeout, conflict): log the failure in the journal but do NOT abort the run. Add the ID to `window.__pendingPersist` so the report can include it in «Что сделать вручную».
 
 **If platform supports browser-based application:**
 1. Open the vacancy
@@ -130,6 +160,7 @@ for (let i = startIdx; i < vacancies.length; i++) {
 6. Submit — wait for HTTP 200 response before counting as applied
 7. Wait between applications according to «Pacing» above (this mimics human behaviour and prevents captcha / account block).
 8. Record in `window.__confirmedApplied` as `{id, title, company, url}` (see Bug 3 fix above)
+9. For non-hh.ru platforms: immediately persist the ID to `{platform}_applied_ids` in memory (see §Persist applied IDs above)
 
 **Application counting:** Only count vacancies where the submit returned HTTP 200. Status 403 (already applied) goes to "уже подавали" list. Status 429 (rate limit) → stop the loop immediately. Any other error → "failed" list. Never increment the counter for failed or blocked requests.
 
@@ -192,6 +223,7 @@ Example: *"Буду рада рассказать подробнее на вст
 - [ ] Every cover letter has exactly 5 parts and 4–5 sentences total
 - [ ] No title from `cover_letter_title_exclusions` was used in any cover letter or message
 - [ ] Cross-platform apply was checked: vacancies pointing to a logged-in platform were applied there, not moved to manual
+- [ ] For every successful application on a non-hh.ru platform: vacancy ID was immediately persisted to `{platform}_applied_ids` in profile memory (§Persist applied IDs)
 - [ ] Every `apply_results[]` item has: `vacancy_id`, `action`, `cover_letter_sent`, `applied_at`
 - [ ] `apply_results[]` has been written to in-session storage before returning to Orchestrator
 

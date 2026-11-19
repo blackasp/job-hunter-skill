@@ -294,6 +294,7 @@ After `dedupVacancies()` runs, each entry in the output may have these additiona
 - **Does not resolve employer identity** — `normCompany()` strips legal suffixes but cannot distinguish between subsidiaries or brands of the same parent company. A SAP Systems AG and SAP SE posting may not merge if the company names differ significantly.
 - **Does not handle near-duplicate descriptions** — description similarity is not a signal in this version. Only title, company, URL, location, date, and salary are used. Description-based detection would require NLP and is out of scope.
 - **Does not modify `filterFull()` logic** — deduplication is a pre-filter step; the filter function is unchanged.
+- **Does not suppress already-applied vacancies** — applied vacancies must be suppressed upstream in Step 2a item 9 (via `manual_reviewed`, `applied_ids`, `habr_applied_ids`). Dedup only marks them `seen_before: true` as a secondary safety signal.
 
 ---
 
@@ -319,6 +320,41 @@ const history = (profile.application_history || []).map(h => ({
   title: h.title || ''
 }));
 
+// Safety net: also load platform-specific applied-ID lists as history entries.
+// Primary suppression happens upstream in daily-search.md Step 2a item 9
+// (vacancies in these lists are skipped before they enter raw_vacancies).
+// These additions ensure dedup marks them seen_before even when that upstream
+// check was skipped — e.g. offline browser run, or a vacancy applied outside
+// the skill that was not yet added to manual_reviewed.
+const historyIds = new Set(history.map(h => h.id));
+(profile.applied_ids || []).forEach(id => {
+  const sid = String(id);
+  if (!historyIds.has(sid)) {
+    history.push({ id: sid, platform: 'hh', url: '', company: '', title: '' });
+    historyIds.add(sid);
+  }
+});
+(profile.habr_applied_ids || []).forEach(id => {
+  const sid = String(id);
+  if (!historyIds.has(sid)) {
+    history.push({ id: sid, platform: 'habr', url: '', company: '', title: '' });
+    historyIds.add(sid);
+  }
+});
+// For other platforms: also load profile[platform_key + '_applied_ids'] if present.
+Object.keys(profile).forEach(key => {
+  if (key.endsWith('_applied_ids') && key !== 'applied_ids' && key !== 'habr_applied_ids') {
+    (profile[key] || []).forEach(id => {
+      const sid = String(id);
+      if (!historyIds.has(sid)) {
+        const platform = key.replace('_applied_ids', '');
+        history.push({ id: sid, platform, url: '', company: '', title: '' });
+        historyIds.add(sid);
+      }
+    });
+  }
+});
+
 const deduped = window.dedupVacancies(raw_vacancies, history);
 // Pass deduped to Agent 2 (Filter) instead of raw_vacancies
 ```
@@ -331,6 +367,7 @@ const deduped = window.dedupVacancies(raw_vacancies, history);
 
 - [ ] `dedupVacancies()` was called on the FULL `raw_vacancies[]` — no item was skipped
 - [ ] History was loaded from the profile's `application_history` (empty array is acceptable if no history)
+- [ ] `applied_ids`, `habr_applied_ids` and any other `{platform}_applied_ids` fields were loaded into history
 - [ ] Every merged entry has `seen_in[]` with at least 2 entries
 - [ ] Every probable-duplicate entry has `dedup_flag: 'probable'` and non-empty `dedup_signals`
 - [ ] No vacancy was silently dropped — `deduped.length >= (raw.length - confident_merges)`
