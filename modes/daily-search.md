@@ -6,7 +6,7 @@ Order of the whole run: Step 0 journal + source ledger → 0a salary threshold �
 
 ### Why this order (root cause of the skipped sources, 2026-11-11)
 
-In the run of 2026-11-11 only hh.ru was searched. The previous instructions said «for each platform in the list: collect ALL pages», put hh.ru first, and let filtering, description reading and applying of that platform's results run before the next platform was touched. One platform with hundreds of vacancies (361 candidates, one page request every 4–8 s for page browsing and for every description, then applications with fixed pacing) consumed the whole run; nothing forced the other sources to be visited first, nothing recorded a per-source status, and the journal was written only at the end, so skipped sources left no trace and the run was explained with an unconfirmed «not enough time». The rules below remove each of these causes.
+In the run of 2026-11-11 only hh.ru was searched. The previous instructions said «for each platform in the list: collect ALL pages», put hh.ru first, and let filtering, description reading and applying of that platform's results run before the next platform was touched. One platform with hundreds of vacancies (361 candidates, one page request every 4–8 s for page browsing and for every description, then applications with fixed pacing) consumed the whole run; nothing forced the other sources to be visited first, nothing recorded a per-source status, and the journal was written only at the end, so skipped sources left no trace and the run was explained with an unconfirmed «не хватило времени». The rules below remove each of these causes.
 
 ### Mandatory sources and the source ledger (every run)
 
@@ -23,7 +23,7 @@ In the run of 2026-11-11 only hh.ru was searched. The previous instructions said
 
 «Проверен» without executed search steps and numbers is not allowed.
 
-**Confirmed reasons (the only ones allowed).** A skip or stop must be backed by something visible in the session: an error message or HTTP status, a captcha or login page, a block (`blocked: true`, 429), a missing login, a tool absent from the session, a limit quoted from a tool result, or an explicit instruction from the user. «Время закончилось», «не хватило времени», «слишком долго», «контекст закончился», «limит» without a quoted source are forbidden. The session has no time limit unless a tool or error says so; if a limit is suspected, find it from the available tools / the error text and report it as it is with the time of observation, otherwise carry on. A long search on one platform is not a reason.
+**Confirmed reasons (the only ones allowed).** A skip or stop must be backed by something visible in the session: an error message or HTTP status, a captcha or login page, a block (`blocked: true`, 429), a missing login, a tool absent from the session, a limit quoted from a tool result, or an explicit instruction from the user. «Время закончилось», «не хватило времени», «слишком долго», «контекст закончился», «лимит» without a quoted source are forbidden. The session has no time limit unless a tool or error says so; if a limit is suspected, find it from the available tools / the error text and report it as it is with the time of observation, otherwise carry on. A long search on one platform is not a reason.
 
 **Run order rules (mandatory):**
 1. **Phase A first.** Threads is swept first (the fastest source, `modes/threads.md`), then the platforms. Sweep every mandatory source before deep work on any of them. In Phase A read only list/search pages (titles, companies, links, dates, salary shown in the list) within the freshness threshold and the pagination rules of Step 2a; do **not** read descriptions and do **not** apply yet.
@@ -121,6 +121,13 @@ Report new platforms found in a dedicated section: **"🆕 Новые платф
 
 **hh.ru-specific checks (apply when searching hh.ru):**
 
+**HH-User-Agent (mandatory).** All requests to hh.ru API must include the custom `HH-User-Agent` header. Without it, hh.ru returns «blacklisted user-agent» (HTTP 403) — this is a **standing policy**, not a new or temporary issue. Build the header from the profile:
+```js
+const hhUA = `JobHunterSkill/1.0 (${profile.hh_contact_email || profile.email})`;
+// Add to every fetch(): headers: { 'HH-User-Agent': hhUA }
+```
+Store the contact email in `profile.hh_contact_email`. See `references/hh-api-setup.md` for the full setup guide, dev.hh.ru registration instructions, and the form texts.
+
 **Data structure:** hh.ru page state (`HH-Lux-InitialState`) uses different field names than the REST API. Always handle both:
 - Vacancy ID: use `v.vacancyId` (InitialState), not `v.id`
 - Company name: `v.company?.name || v.company?.visibleName` (not `v.employer.name`)
@@ -209,8 +216,9 @@ Trigger: user says "update resume", "I added a certificate", "upload new PDF" �
 - [ ] Every `raw_vacancies[]` item has all required fields: `id`, `platform`, `title`, `company`, `url`, `posted_date`, `work_format`, `tg_message_link` (if TG)
 - [ ] Telegram vacancies: every item has `tg_message_link` populated — items without it are dropped from the array
 - [ ] Browser fallback was used for any source that returned ERR_CONNECTION_RESET, 403, or timeout on WebFetch
-- [ ] `raw_vacancies[]` has been written to in-session storage before returning to Orchestrator
+- [ ] All hh.ru API requests in this run included the `HH-User-Agent` header with the value from `profile.hh_contact_email` (see `references/hh-api-setup.md`)
 - [ ] Vacancies were filtered against `manual_reviewed`, `applied_ids`, `habr_applied_ids`, and all `{platform}_applied_ids` fields before being added to `raw_vacancies[]`
+- [ ] `raw_vacancies[]` has been written to in-session storage before returning to Orchestrator
 
 If any check fails → fix it before handing off. If a source is genuinely unreachable after all fallbacks, mark it «недоступен» with evidence and continue.
 
