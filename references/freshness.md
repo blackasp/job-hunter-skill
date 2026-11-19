@@ -130,3 +130,43 @@ No new configuration fields are required. `max_vacancy_age_days` already exists 
 - [ ] Vacancies with status `неизвестно` are kept and flagged, not silently dropped
 - [ ] Vacancies with status `закрыта` are removed (blocked_reason: 'freshness-closed')
 - [ ] Vacancies with status `вероятно устарела` are removed (blocked_reason: 'freshness-stale')
+- [ ] Every pending invitation and manual-apply item was checked with `checkPendingItemFreshness`; stale/unknown items are labelled ⚠️ in the report
+
+---
+
+## Pending invitations and manual-apply staleness
+
+Invitations from employers (`invitations` in profile) and pending manual-apply items must carry a `received_date`. At the start of each run, check each pending item before including it in the report.
+
+**Rule:** If `received_date` is absent, treat as `неизвестно` (possibly stale). Never silently suppress — show with ⚠️ and suggest verifying or removing.
+
+```js
+window.checkPendingItemFreshness = (item, profile) => {
+  const maxAge = (profile && profile.max_vacancy_age_days) || 45;
+  const ref = item.received_date || item.noted_date || null;
+  if (!ref) {
+    return { freshness: 'неизвестно', reason: 'дата не указана — возможно устарело' };
+  }
+  const age = Math.floor((Date.now() - new Date(ref).getTime()) / 86400000);
+  if (isNaN(age)) {
+    return { freshness: 'неизвестно', reason: 'дата не читается: ' + String(ref) };
+  }
+  if (age > maxAge) {
+    return { freshness: 'вероятно устарело', reason: `${age} дней с момента получения (порог ${maxAge})` };
+  }
+  return { freshness: 'актуально', reason: `${age} дней` };
+};
+```
+
+**Integration:** In `modes/report.md`, before listing pending invitations and manual-apply items, call `checkPendingItemFreshness` on each. Items with `вероятно устарело` or `неизвестно` are shown with ⚠️ and a note to verify or remove. Never suppress silently — the user decides.
+
+**New profile format for invitations:**
+```yaml
+invitations:
+  - id: "117465623"
+    platform: hh
+    company: Альфа-Банк
+    received_date: "2026-09-15"
+    status: pending
+```
+When reading the old plain-text format (`# Invitation received: ID (Company)`) without a date — treat as `неизвестно` for the first run and prompt the user to confirm or add the date.
