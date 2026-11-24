@@ -2,6 +2,10 @@
 
 Catalogue of job platforms by profession and geography, with per-platform search specifics. Used by `modes/onboarding.md` (building the user's platform list) and `modes/daily-search.md` (searching them). All platforms here are *candidates*: which ones are used is decided by the user's profile. A platform is searched with auto-apply only if the profile marks a confirmed login for it.
 
+## Global rule: always search, always report
+
+**Every platform in this file is searched on every run, regardless of whether vacancies are expected.** Even if a platform returns 0 results — still include it in the run report with status «проверен — 0 вакансий». Never skip a platform because "it probably won't have anything". The user decides which platforms are useful based on actual results, not predictions.
+
 ## Known platforms
 
 Priority logic (determined dynamically by profession + geo). Select the most relevant platforms for the user's profession and location. All platforms below are available — choose the best fit, or include all when unsure.
@@ -81,16 +85,16 @@ Priority logic (determined dynamically by profession + geo). Select the most rel
 
 **WANTAPPLY specifics:** Open https://wantapply.com, search by profession keywords. Много позиций зарубежом напрямую от работодателей.
 
-**4dayweek.io specifics:** Open https://4dayweek.io/jobs, use search by keyword (e.g. "system analyst", "analyst"). Filter: Remote. No registration required to browse. Collect matching vacancies and add to report under «Новые платформы — результаты поиска».
+**4dayweek.io specifics:** Open https://4dayweek.io/jobs, use search by keyword (e.g. "system analyst", "analyst"). Filter: Remote. No registration required to browse. Always include this platform in every run report — even if no vacancies found, mark status «проверен — 0 вакансий». Matching vacancies go to «Новые платформы — результаты поиска» with status «Требуется регистрация».
 
-**Workaem specifics:** Open https://workaem.com, search by profession keywords. Агрегатор IT и digital вакансий для РФ и мира; отфильтровать «Удалённо». Без регистрации. Вакансии «только для РФ» — исключать.
+**Workaem specifics:** Open https://workaem.com, search by profession keywords. Агрегатор IT и digital вакансий для РФ и мира; отфильтровать «Удалённо». Без регистрации. Вакансии «только для РФ» — исключать. Always include in every run report even if no vacancies found.
 
-**CareerSpace specifics:** Open https://careerspace.app, browse or search vacancies by keywords. Просмотр вакансий доступен без регистрации. Регистрация нужна только для отклика.
+**CareerSpace specifics:** Open https://careerspace.app, browse or search vacancies by keywords. Просмотр вакансий доступен без регистрации. Регистрация нужна только для отклика. Always include in every run report even if no vacancies found.
 
-**finder.work specifics:** Open https://finder.work, search by keywords. Удалённые вакансии. Без регистрации для просмотра.
+**finder.work specifics:** Open https://finder.work, search by keywords. Удалённые вакансии. Без регистрации для просмотра. Always include in every run report even if no vacancies found.
 
-**Vseti specifics:** Open https://www.vseti.app/jobs, search by profession keywords. IT-соцсеть с разделом вакансий. Без регистрации для просмотра.
+**Vseti specifics:** Open https://www.vseti.app/jobs, search by profession keywords. IT-соцсеть с разделом вакансий. Без регистрации для просмотра. Always include in every run report even if no vacancies found.
 
-**Remocate specifics:** Open https://www.remocate.app, browse vacancies. Удалёнка и релокация. Без регистрации для просмотра.
+**Remocate specifics:** Open https://www.remocate.app, browse vacancies. Удалёнка и релокация. Без регистрации для просмотра. Always include in every run report even if no vacancies found.
 
-**Generalist World specifics:** Open https://generalistworld.com, search by keywords. Для специалистов с широкими навыками. Без регистрации для просмотра.
+**Generalist World specifics:** Open https://generalistworld.com, search by keywords. Для специалистов с широкими навыками. Без регистрации для просмотра. Always include in every run report even if no vacancies found.
