@@ -43,6 +43,15 @@ Priority logic (determined dynamically by profession + geo). Select the most rel
 - [LinkedIn](https://linkedin.com/jobs)
 - [eFinancialCareers](https://efinancialcareers.com) — финансы и аналитика
 
+**Level 1 — Нишевые и специализированные (remote/international):**
+- [4dayweek.io](https://4dayweek.io) — вакансии с 4-дневной рабочей неделей; международные компании; без регистрации
+- [Workaem](https://workaem.com) — агрегатор IT и digital вакансий, Россия и мир; без регистрации
+- [CareerSpace](https://careerspace.app) — IT-карьера, подбор и рекомендации; без регистрации для просмотра
+- [finder.work](https://finder.work) — удалённые вакансии, агрегатор; без регистрации
+- [Сети / Vseti](https://www.vseti.app/jobs) — IT-соцсеть с вакансиями, удалёнка; без регистрации для просмотра
+- [Remocate](https://www.remocate.app) — удалёнка и релокация; без регистрации
+- [Generalist World](https://generalistworld.com) — платформа для специалистов с широким набором навыков; без регистрации
+
 **Level 2 — Агрегаторы и нишевые платформы (универсальные):**
 - [WANTAPPLY](https://wantapply.com) — международные позиции напрямую от работодателей
 - [FlexJobs](https://flexjobs.com) — гибкие и удалённые вакансии (платная подписка, но качество высокое)
@@ -71,3 +80,17 @@ Priority logic (determined dynamically by profession + geo). Select the most rel
 **Supabase Careers specifics:** Open https://supabase.com/careers#positions — список открытых позиций. Нет фильтра по ключевому слову, просматривать весь список вручную.
 
 **WANTAPPLY specifics:** Open https://wantapply.com, search by profession keywords. Много позиций зарубежом напрямую от работодателей.
+
+**4dayweek.io specifics:** Open https://4dayweek.io/jobs, use search by keyword (e.g. "system analyst", "analyst"). Filter: Remote. No registration required to browse. Collect matching vacancies and add to report under «Новые платформы — результаты поиска».
+
+**Workaem specifics:** Open https://workaem.com, search by profession keywords. Агрегатор IT и digital вакансий для РФ и мира; отфильтровать «Удалённо». Без регистрации. Вакансии «только для РФ» — исключать.
+
+**CareerSpace specifics:** Open https://careerspace.app, browse or search vacancies by keywords. Просмотр вакансий доступен без регистрации. Регистрация нужна только для отклика.
+
+**finder.work specifics:** Open https://finder.work, search by keywords. Удалённые вакансии. Без регистрации для просмотра.
+
+**Vseti specifics:** Open https://www.vseti.app/jobs, search by profession keywords. IT-соцсеть с разделом вакансий. Без регистрации для просмотра.
+
+**Remocate specifics:** Open https://www.remocate.app, browse vacancies. Удалёнка и релокация. Без регистрации для просмотра.
+
+**Generalist World specifics:** Open https://generalistworld.com, search by keywords. Для специалистов с широкими навыками. Без регистрации для просмотра.
